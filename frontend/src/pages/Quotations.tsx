@@ -3,6 +3,8 @@ import { quotationsAPI, clientsAPI, servicesAPI, currencyAPI, Quotation, Client,
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { getCurrencySymbol } from '../utils/currency';
+import BulkDeleteToolbar from '../components/BulkDeleteToolbar';
+import BulkDeleteConfirmation from '../components/BulkDeleteConfirmation';
 
 interface QuotationItem {
   service_id: number;
@@ -20,14 +22,20 @@ const Quotations = () => {
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingQuotation, setEditingQuotation] = useState<Quotation | null>(null);
+  const [selectedQuotations, setSelectedQuotations] = useState<number[]>([]);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [formData, setFormData] = useState({
     client_id: '',
     date: new Date().toISOString().split('T')[0],
     validity: 30,
+    status: 'draft',
     notes: '',
     currency: 'PKR',
+    purchase_requisition: '',
     items: [] as QuotationItem[],
   });
 
@@ -38,16 +46,31 @@ const Quotations = () => {
     fetchClients();
     fetchServices();
     fetchCurrencies();
-  }, [searchTerm]);
+  }, [searchTerm, statusFilter]);
 
   const fetchQuotations = async () => {
     try {
+      setLoading(true);
       const response = await quotationsAPI.getAll(searchTerm || undefined);
       // Handle paginated response
       if (response && response.data && response.data.results && Array.isArray(response.data.results)) {
-        setQuotations(response.data.results);
+        let filteredQuotations: Quotation[] = response.data.results;
+        
+        // Apply status filter if selected
+        if (statusFilter) {
+          filteredQuotations = filteredQuotations.filter((quotation: Quotation) => quotation.status === statusFilter);
+        }
+        
+        setQuotations(filteredQuotations);
       } else if (response && response.data && Array.isArray(response.data)) {
-        setQuotations(response.data);
+        let filteredQuotations: Quotation[] = response.data;
+        
+        // Apply status filter if selected
+        if (statusFilter) {
+          filteredQuotations = filteredQuotations.filter((quotation: Quotation) => quotation.status === statusFilter);
+        }
+        
+        setQuotations(filteredQuotations);
       } else {
         setQuotations([]);
         toast.error('Invalid data format received');
@@ -89,6 +112,53 @@ const Quotations = () => {
       toast.error('Failed to fetch currencies');
     }
   };
+  const handleStatusChange = async (id: number, newStatus: string) => {
+    try {
+      console.log(`Changing status for quotation ${id} to ${newStatus}`);
+      
+      // Optimistically update the UI first for better user experience
+      setQuotations(prevQuotations => 
+        prevQuotations.map(quotation => 
+          quotation.id === id 
+            ? { ...quotation, status: newStatus as any }
+            : quotation
+        )
+      );
+      
+      if (newStatus === 'approved') {
+        await quotationsAPI.approve(id);
+        toast.success('Quotation approved successfully');
+      } else if (newStatus === 'rejected') {
+        const reason = window.prompt('Please provide a reason for rejection (optional):');
+        await quotationsAPI.reject(id, reason || '');
+        toast.success('Quotation rejected');
+      } else if (newStatus === 'converted') {
+        // Handle conversion to invoice with confirmation
+        if (window.confirm('Convert this quotation to an invoice?')) {
+          await quotationsAPI.convertToInvoice(id);
+          toast.success('Quotation converted to invoice successfully');
+        } else {
+          // Revert the optimistic update if cancelled
+          await fetchQuotations();
+          return; // Cancel the operation
+        }
+      } else {
+        // For other status changes, use the update method
+        await quotationsAPI.update(id, { status: newStatus as any });
+        toast.success(`Quotation status updated to ${newStatus}`);
+      }
+      
+      // Refresh to ensure consistency with backend
+      console.log('Confirming status change with backend...');
+      await fetchQuotations();
+    } catch (error: any) {
+      console.error('Status change error:', error);
+      // Revert optimistic update on error
+      await fetchQuotations();
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || `Failed to update quotation status to ${newStatus}`;
+      toast.error(errorMessage);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,8 +172,10 @@ const Quotations = () => {
         client: parseInt(formData.client_id),
         date: formData.date,
         validity: formData.validity,
+        status: formData.status as 'draft' | 'sent' | 'pending' | 'approved' | 'rejected' | 'converted' | 'expired',
         notes: formData.notes,
         currency: formData.currency,
+        purchase_requisition: formData.purchase_requisition,
         items: formData.items.map(item => ({
           service: item.service_id,
           quantity: item.quantity,
@@ -134,8 +206,10 @@ const Quotations = () => {
       client_id: '',
       date: new Date().toISOString().split('T')[0],
       validity: 30,
+      status: 'draft',
       notes: '',
       currency: 'PKR',
+      purchase_requisition: '',
       items: [],
     });
   };
@@ -175,8 +249,10 @@ const Quotations = () => {
       client_id: quotation.client.toString(), // client is already a number (ID)
       date: quotation.date,
       validity: quotation.validity,
+      status: quotation.status || 'draft',
       notes: quotation.notes,
       currency: quotation.currency || 'PKR',
+      purchase_requisition: quotation.purchase_requisition || '',
       items: quotation.items?.map(item => ({
         service_id: item.service, // service is already a number (ID)
         quantity: item.quantity,
@@ -200,16 +276,43 @@ const Quotations = () => {
     }
   };
 
-  const convertToInvoice = async (id: number) => {
-    if (window.confirm('Convert this quotation to an invoice?')) {
-      try {
-        await quotationsAPI.convertToInvoice(id);
-        toast.success('Quotation converted to invoice successfully');
-        fetchQuotations();
-      } catch (error) {
-        toast.error('Failed to convert quotation');
-      }
+  const handleSelectQuotation = (quotationId: number, isSelected: boolean) => {
+    if (isSelected) {
+      setSelectedQuotations(prev => [...prev, quotationId]);
+    } else {
+      setSelectedQuotations(prev => prev.filter(id => id !== quotationId));
     }
+  };
+
+  const handleSelectAllQuotations = (isSelected: boolean) => {
+    if (isSelected) {
+      setSelectedQuotations(quotations.map(quotation => quotation.id));
+    } else {
+      setSelectedQuotations([]);
+    }
+  };
+
+  const handleBulkDelete = () => {
+    setShowBulkDeleteConfirm(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    try {
+      setBulkDeleteLoading(true);
+      await quotationsAPI.bulkDelete(selectedQuotations);
+      toast.success(`Successfully deleted ${selectedQuotations.length} quotations`);
+      setSelectedQuotations([]);
+      setShowBulkDeleteConfirm(false);
+      fetchQuotations();
+    } catch (error) {
+      toast.error('Failed to delete selected quotations');
+    } finally {
+      setBulkDeleteLoading(false);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedQuotations([]);
   };
 
   const generatePDF = async (id: number) => {
@@ -284,6 +387,19 @@ const Quotations = () => {
     }, 0);
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'draft': return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+      case 'sent': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'approved': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'rejected': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      case 'converted': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+      case 'expired': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -307,22 +423,69 @@ const Quotations = () => {
         )}
       </div>
 
-      {/* Search Bar */}
-      <div className="mb-6">
-        <input
-          type="text"
-          placeholder="Search quotations..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-        />
+      {/* Filters */}
+      <div className="mb-6 space-y-4">
+        {/* Centered Search Bar */}
+        <div className="flex justify-center">
+          <div className="w-full max-w-md relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Search quotations..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 rounded-full bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:bg-white dark:focus:bg-gray-800 dark:text-white text-sm placeholder-gray-400 transition-all duration-200"
+            />
+          </div>
+        </div>
+        
+        {/* Status Filter */}
+        <div className="flex justify-center">
+          <div className="w-full max-w-xs">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-full bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:bg-white dark:focus:bg-gray-800 dark:text-white text-sm transition-all duration-200"
+            >
+              <option value="">All Statuses</option>
+              <option value="draft">Draft</option>
+              <option value="sent">Sent</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="converted">Converted</option>
+              <option value="expired">Expired</option>
+            </select>
+          </div>
+        </div>
       </div>
+
+      {/* Bulk Delete Toolbar */}
+      <BulkDeleteToolbar
+        selectedCount={selectedQuotations.length}
+        onDeleteSelected={handleBulkDelete}
+        onClearSelection={clearSelection}
+        loading={bulkDeleteLoading}
+        entityType="quotations"
+      />
 
       {/* Quotations Table */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
         <table className="min-w-full">
           <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>
+              <th className="px-6 py-3">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  checked={quotations.length > 0 && selectedQuotations.length === quotations.length}
+                  onChange={(e) => handleSelectAllQuotations(e.target.checked)}
+                />
+              </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Client
               </th>
@@ -336,6 +499,9 @@ const Quotations = () => {
                 Total
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Validity
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -346,6 +512,14 @@ const Quotations = () => {
           <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
             {quotations.map((quotation) => (
               <tr key={quotation.id}>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    checked={selectedQuotations.includes(quotation.id)}
+                    onChange={(e) => handleSelectQuotation(quotation.id, e.target.checked)}
+                  />
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                   {quotation.client_name || 'Unknown Client'}
                 </td>
@@ -358,38 +532,63 @@ const Quotations = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                   {quotation.formatted_total || `${quotation.currency_symbol || 'Rs'}${quotation.total_amount ? parseFloat(quotation.total_amount).toFixed(2) : '0.00'}`}
                 </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(quotation.status || 'draft')}`}>
+                    {(quotation.status || 'draft').charAt(0).toUpperCase() + (quotation.status || 'draft').slice(1)}
+                  </span>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                   {quotation.validity} days
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                  <button
-                    onClick={() => generatePDF(quotation.id)}
-                    className="text-blue-600 hover:text-blue-900 dark:text-blue-400"
-                  >
-                    PDF
-                  </button>
-                  {canEdit && (
-                    <>
-                      <button
-                        onClick={() => handleEdit(quotation)}
-                        className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => convertToInvoice(quotation.id)}
-                        className="text-green-600 hover:text-green-900 dark:text-green-400"
-                      >
-                        Convert
-                      </button>
-                      <button
-                        onClick={() => handleDelete(quotation.id)}
-                        className="text-red-600 hover:text-red-900 dark:text-red-400"
-                      >
-                        Delete
-                      </button>
-                    </>
-                  )}
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <button
+                      onClick={() => generatePDF(quotation.id)}
+                      className="text-blue-600 hover:text-blue-900 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2 py-1 rounded transition-colors"
+                      title="Download PDF"
+                    >
+                      PDF
+                    </button>
+                    {canEdit && (
+                      <>
+                        <button
+                          onClick={() => handleEdit(quotation)}
+                          className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1 rounded transition-colors"
+                          title="Edit Quotation"
+                        >
+                          Edit
+                        </button>
+                        
+                        {/* Quick Status Change Dropdown */}
+                        {(quotation.status !== 'converted') && (
+                          <div className="relative">
+                            <select
+                              value={quotation.status || 'draft'}
+                              onChange={(e) => handleStatusChange(quotation.id, e.target.value)}
+                              className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                              title="Change Status"
+                            >
+                              <option value="draft">Draft</option>
+                              <option value="sent">Sent</option>
+                              <option value="pending">Pending</option>
+                              <option value="approved">Approved</option>
+                              <option value="rejected">Rejected</option>
+                              <option value="converted">Convert to Invoice</option>
+                              <option value="expired">Expired</option>
+                            </select>
+                          </div>
+                        )}
+                        
+                        <button
+                          onClick={() => handleDelete(quotation.id)}
+                          className="text-red-600 hover:text-red-900 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 px-2 py-1 rounded transition-colors"
+                          title="Delete Quotation"
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -474,7 +673,16 @@ const Quotations = () => {
                   </select>
                 </div>
                 <div>
-                  {/* Empty div for spacing */}
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Purchase Requisition
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.purchase_requisition}
+                    onChange={(e) => setFormData({ ...formData, purchase_requisition: e.target.value })}
+                    placeholder="Enter purchase requisition details"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  />
                 </div>
               </div>
 
@@ -630,6 +838,16 @@ const Quotations = () => {
           </div>
         </div>
       )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      <BulkDeleteConfirmation
+        isOpen={showBulkDeleteConfirm}
+        onClose={() => setShowBulkDeleteConfirm(false)}
+        onConfirm={confirmBulkDelete}
+        selectedCount={selectedQuotations.length}
+        entityType="quotations"
+        loading={bulkDeleteLoading}
+      />
     </div>
   );
 };

@@ -4,7 +4,7 @@ import axios from 'axios';
 const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
 // Create axios instance with base URL
-const api = axios.create({
+export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -57,6 +57,51 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Financial API endpoints
+export const financialAPI = {
+  // Dashboard
+  getDashboardInsights: () => api.get('/financial-dashboard/'),
+  
+  // Financial Activities
+  getActivities: (params?: any) => api.get('/financial-activities/', { params }),
+  getActivity: (id: number) => api.get(`/financial-activities/${id}/`),
+  createActivity: (data: any) => api.post('/financial-activities/', data),
+  updateActivity: (id: number, data: any) => api.patch(`/financial-activities/${id}/`, data),
+  deleteActivity: (id: number) => api.delete(`/financial-activities/${id}/`),
+  approveActivity: (id: number) => api.post(`/financial-activities/${id}/approve/`),
+  rejectActivity: (id: number, reason: string) => api.post(`/financial-activities/${id}/reject/`, { reason }),
+  markAsPaid: (id: number) => api.post(`/financial-activities/${id}/mark_paid/`),
+  getActivitiesSummary: () => api.get('/financial-activities/summary/'),
+  
+  // Financial Accounts
+  getAccounts: (params?: any) => api.get('/financial-accounts/', { params }),
+  getAccount: (id: number) => api.get(`/financial-accounts/${id}/`),
+  createAccount: (data: any) => api.post('/financial-accounts/', data),
+  updateAccount: (id: number, data: any) => api.patch(`/financial-accounts/${id}/`, data),
+  deleteAccount: (id: number) => api.delete(`/financial-accounts/${id}/`),
+  getAccountsHierarchy: () => api.get('/financial-accounts/hierarchy/'),
+  
+  // Financial Attachments
+  getAttachments: (params?: any) => api.get('/financial-attachments/', { params }),
+  uploadAttachment: (data: FormData) => api.post('/financial-attachments/', data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  deleteAttachment: (id: number) => api.delete(`/financial-attachments/${id}/`),
+  
+  // Reports
+  getBalanceSheet: (params?: any) => api.get('/balance-sheet/', { params }),
+  exportReport: (params: any) => api.get('/export-financial-report/', { 
+    params,
+    responseType: 'blob'
+  }),
+  
+  // Audit Logs
+  getAuditLogs: (params?: any) => api.get('/financial-audit-logs/', { params }),
+  
+  // Additional API functions for enhanced features
+  getApprovedQuotations: () => api.get('/approved-quotations/'),
+};
 
 // Types
 export interface Client {
@@ -123,12 +168,17 @@ export interface Quotation {
   client_name?: string;
   date: string;
   validity: number;
+  status: 'draft' | 'sent' | 'pending' | 'approved' | 'rejected' | 'converted' | 'expired';
   currency: string;
   currency_symbol?: string;
   formatted_total?: string;
   notes: string;
+  purchase_requisition?: string;
   created_by: number;
   created_by_name?: string;
+  approved_by?: number;
+  approved_by_name?: string;
+  approved_at?: string;
   items: QuotationItem[];
   total_amount?: string;
   subtotal_amount?: string;
@@ -153,19 +203,23 @@ export interface InvoiceItem {
 export interface Invoice {
   id: number;
   number: string;
+  po_number?: string;
   quotation?: number;
   quotation_number?: string;
   client: number;
   client_name?: string;
   date: string;
   due_date: string;
-  status: 'draft' | 'sent' | 'paid' | 'overdue';
+  status: 'draft' | 'sent' | 'pending' | 'approved' | 'rejected' | 'paid' | 'overdue' | 'cancelled';
   currency: string;
   currency_symbol?: string;
   formatted_total?: string;
   notes: string;
   created_by: number;
   created_by_name?: string;
+  approved_by?: number;
+  approved_by_name?: string;
+  approved_at?: string;
   items: InvoiceItem[];
   total_amount?: string;
   subtotal_amount?: string;
@@ -183,6 +237,46 @@ export interface User {
   role: string;
   is_active: boolean;
   date_joined: string;
+}
+
+export interface FinancialActivity {
+  id: number;
+  reference_number: string;
+  activity_type: 'receivable' | 'payable' | 'expense' | 'income';
+  amount: number;
+  currency: string;
+  client: number;
+  client_details?: Client;
+  client_name?: string;
+  account_name?: string;
+  project_quotation?: number;
+  project_invoice?: number;
+  account: number;
+  // Enhanced project tracking fields for expenses
+  project_number?: string;
+  invoice_number?: string;
+  expense_category?: string;
+  cost_center?: string;
+  description: string;
+  bill_to?: string;
+  payment_method: 'cash' | 'bank_transfer' | 'check' | 'credit_card' | 'digital_wallet' | 'crypto' | 'other';
+  status: 'pending' | 'approved' | 'rejected' | 'paid' | 'overdue' | 'cancelled';
+  transaction_date: string;
+  due_date?: string;
+  paid_date?: string;
+  approved_by?: number;
+  approved_at?: string;
+  rejection_reason?: string;
+  notes?: string;
+  tags?: string;
+  is_recurring: boolean;
+  recurring_frequency?: 'weekly' | 'monthly' | 'quarterly' | 'annually';
+  created_by: number;
+  created_at: string;
+  updated_at: string;
+  currency_symbol?: string;
+  formatted_amount?: string;
+  is_overdue?: boolean;
 }
 
 export interface ActivityLog {
@@ -278,6 +372,54 @@ export interface DashboardStats {
   monthly_invoices: number;
 }
 
+// Financial Chart Data Interfaces
+export interface InvoicePaymentData {
+  month: string;
+  invoices: number;
+  payments: number;
+}
+
+export interface ClientReceivablesData {
+  client: string;
+  amount: number;
+}
+
+export interface InvoiceStatusData {
+  status: string;
+  count: number;
+  amount: number;
+}
+
+export interface ReceivablesAgingData {
+  client: string;
+  days_0_30: number;
+  days_31_60: number;
+  days_61_90: number;
+  days_90_plus: number;
+}
+
+export interface FinancialChartsResponse {
+  invoice_payments: InvoicePaymentData[];
+  client_receivables: ClientReceivablesData[];
+  invoice_status: InvoiceStatusData[];
+  receivables_aging: ReceivablesAgingData[];
+  filters_applied: {
+    date_from: string;
+    date_to: string;
+    client?: string;
+    status?: string;
+  };
+}
+
+export interface FinancialSummaryResponse {
+  total_receivables: number;
+  overdue_amount: number;
+  this_month_revenue: number;
+  invoice_count: number;
+  paid_invoice_count: number;
+  overdue_invoice_count: number;
+}
+
 // API Functions
 
 // Auth
@@ -302,6 +444,17 @@ export const currencyAPI = {
 export const dashboardAPI = {
   getStats: () =>
     api.get<{ stats: DashboardStats; recent_activities: ActivityLog[] }>('/dashboard/'),
+  
+  // New Financial Chart Data
+  getFinancialCharts: (params?: {
+    date_from?: string;
+    date_to?: string;
+    client?: string;
+    status?: string;
+  }) => api.get('/financial-charts/', { params }),
+  
+  getFinancialSummary: () =>
+    api.get('/financial-summary/'),
 };
 
 // Clients
@@ -318,6 +471,8 @@ export const clientsAPI = {
     api.patch<Client>(`/clients/${id}/`, data),
   delete: (id: number) =>
     api.delete(`/clients/${id}/`),
+  bulkDelete: (ids: number[]) =>
+    api.post('/clients/bulk_delete/', { ids }),
 };
 
 // Services
@@ -332,6 +487,8 @@ export const servicesAPI = {
     api.patch<Service>(`/services/${id}/`, data),
   delete: (id: number) =>
     api.delete(`/services/${id}/`),
+  bulkDelete: (ids: number[]) =>
+    api.post('/services/bulk_delete/', { ids }),
 };
 
 // Quotations
@@ -346,12 +503,18 @@ export const quotationsAPI = {
     api.patch<Quotation>(`/quotations/${id}/`, data),
   delete: (id: number) =>
     api.delete(`/quotations/${id}/`),
+  approve: (id: number) =>
+    api.post(`/quotations/${id}/approve/`),
+  reject: (id: number, reason?: string) =>
+    api.post(`/quotations/${id}/reject/`, { reason }),
   generatePDF: (id: number) =>
     api.get(`/quotations/${id}/generate_pdf/`, { responseType: 'blob' }),
   sendEmail: (id: number, email: string, message?: string) =>
     api.post(`/quotations/${id}/send_email/`, { email, message }),
   convertToInvoice: (id: number) =>
     api.post<Invoice>(`/quotations/${id}/convert_to_invoice/`),
+  bulkDelete: (ids: number[]) =>
+    api.post('/quotations/bulk_delete/', { ids }),
 };
 
 // Invoices
@@ -370,8 +533,14 @@ export const invoicesAPI = {
     api.get(`/invoices/${id}/generate_pdf/`, { responseType: 'blob' }),
   sendEmail: (id: number, email: string, message?: string) =>
     api.post(`/invoices/${id}/send_email/`, { email, message }),
+  approve: (id: number) =>
+    api.post(`/invoices/${id}/approve/`),
+  reject: (id: number, reason?: string) =>
+    api.post(`/invoices/${id}/reject/`, { reason }),
   markAsPaid: (id: number) =>
     api.post(`/invoices/${id}/mark_as_paid/`),
+  bulkDelete: (ids: number[]) =>
+    api.post('/invoices/bulk_delete/', { ids }),
 };
 
 // Users
@@ -386,6 +555,8 @@ export const usersAPI = {
     api.patch<User>(`/users/${id}/`, data),
   delete: (id: number) =>
     api.delete(`/users/${id}/`),
+  bulkDelete: (ids: number[]) =>
+    api.post('/users/bulk_delete/', { ids }),
 };
 
 // Activity Logs

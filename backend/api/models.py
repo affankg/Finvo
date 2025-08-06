@@ -202,17 +202,32 @@ class ClientAttachment(models.Model):
         super().save(*args, **kwargs)
 
 class Quotation(models.Model):
+    STATUS_CHOICES = (
+        ('draft', 'Draft'),
+        ('sent', 'Sent'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('converted', 'Converted to Invoice'),
+        ('expired', 'Expired'),
+    )
+    
     number = models.CharField(max_length=20, unique=True)
     client = models.ForeignKey(Client, on_delete=models.CASCADE)
+    project = models.ForeignKey('Project', on_delete=models.SET_NULL, null=True, blank=True, related_name='quotations')
     date = models.DateField()
     validity = models.IntegerField(default=30)  # days
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    description = models.TextField(blank=True, help_text="Detailed description of the quotation scope")
     currency = models.CharField(
         max_length=3,
         choices=[(code, code) for code, name, symbol in getattr(settings, 'CURRENCY_CHOICES', [('PKR', 'Pakistani Rupee', 'Rs')])],
         default=getattr(settings, 'DEFAULT_CURRENCY', 'PKR')
     )
+    purchase_requisition = models.CharField(max_length=50, blank=True, null=True, help_text="Purchase Requisition Number")
     notes = models.TextField(blank=True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_quotations')
+    approved_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -314,13 +329,17 @@ class Invoice(models.Model):
     STATUS_CHOICES = (
         ('draft', 'Draft'),
         ('sent', 'Sent'),
+        ('approved', 'Approved'),
         ('paid', 'Paid'),
         ('overdue', 'Overdue'),
+        ('cancelled', 'Cancelled'),
     )
     
     number = models.CharField(max_length=20, unique=True)
+    po_number = models.CharField(max_length=50, blank=True, null=True, help_text="Purchase Order Number")
     quotation = models.OneToOneField(Quotation, on_delete=models.CASCADE, null=True, blank=True)
     client = models.ForeignKey(Client, on_delete=models.CASCADE)
+    project = models.ForeignKey('Project', on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
     date = models.DateField()
     due_date = models.DateField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
@@ -331,6 +350,8 @@ class Invoice(models.Model):
     )
     notes = models.TextField(blank=True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_invoices')
+    approved_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -358,16 +379,6 @@ class Invoice(models.Model):
     def total_amount(self):
         """Calculate total amount from all items"""
         return sum(item.total for item in self.items.all())
-
-    @property
-    def subtotal_amount(self):
-        """Calculate subtotal before tax from all items"""
-        return sum(item.subtotal if hasattr(item, 'subtotal') else (item.quantity * item.price) for item in self.items.all())
-    
-    @property
-    def total_tax_amount(self):
-        """Calculate total tax amount from all items"""
-        return sum(item.tax_amount if hasattr(item, 'tax_amount') else 0 for item in self.items.all())
 
     @property
     def subtotal_amount(self):
@@ -451,3 +462,24 @@ class ActivityLog(models.Model):
     object_id = models.IntegerField()
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+# Import financial models
+from .financial_models import (
+    FinancialAccount,
+    FinancialActivity,
+    FinancialAttachment,
+    JournalEntry,
+    JournalEntryLine,
+    FinancialReport,
+    FinancialAuditLog,
+)
+
+# Import project models
+from .project_models import (
+    Project,
+    ProjectAssignment,
+    ProjectAttachment,
+    ProjectMilestone,
+    ProjectNote,
+)

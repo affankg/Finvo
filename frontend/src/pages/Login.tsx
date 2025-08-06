@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import Logo from '../components/Logo';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -25,20 +28,106 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-            BS Engineering
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Sign in to your account
-          </p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-950 via-slate-900 to-gray-900 relative overflow-hidden px-6">
+      {/* Enhanced Dark Background */}
+      <div className="absolute inset-0">
+        {/* Subtle Pattern Overlay */}
+        <div 
+          className="absolute inset-0 opacity-10" 
+          style={{
+            backgroundImage: `radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.05) 1px, transparent 1px)`,
+            backgroundSize: '24px 24px'
+          }}
+        ></div>
+        
+        {/* World Map Background */}
+        <div className="absolute inset-0 opacity-15 sm:opacity-20">
+          <svg
+            className="w-full h-full object-cover"
+            viewBox="0 0 1920 1080"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <defs>
+              <linearGradient id="lineGradient1" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#374151" stopOpacity="0.3"/>
+                <stop offset="50%" stopColor="#6B7280" stopOpacity="0.8"/>
+                <stop offset="100%" stopColor="#374151" stopOpacity="0.3"/>
+              </linearGradient>
+            </defs>
+            
+            {/* Map paths */}
+            <path
+              d="M300 400L500 300L700 350L900 300L1100 400L1300 350L1500 400"
+              stroke="#6B7280"
+              strokeWidth="1.5"
+              fill="none"
+              opacity="0.4"
+            />
+            <path
+              d="M200 500L400 450L600 500L800 450L1000 500L1200 450L1400 500L1600 450"
+              stroke="#60A5FA"
+              strokeWidth="2"
+              fill="none"
+              opacity="0.6"
+            />
+            
+            {/* City lights */}
+            <circle cx="300" cy="400" r="2" fill="#FCD34D" opacity="0.6" className="animate-pulse" />
+            <circle cx="500" cy="300" r="1.5" fill="#FCD34D" opacity="0.4" className="animate-pulse" />
+            <circle cx="700" cy="350" r="2" fill="#FCD34D" opacity="0.6" className="animate-pulse" />
+            <circle cx="900" cy="300" r="1.5" fill="#FCD34D" opacity="0.4" className="animate-pulse" />
+            <circle cx="1100" cy="400" r="2" fill="#FCD34D" opacity="0.6" className="animate-pulse" />
+          </svg>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
+
+        {/* Animated Connection Lines */}
+        <div className="absolute inset-0">
+          <svg className="w-full h-full" viewBox="0 0 1920 1080">
+            <defs>
+              <linearGradient id="animatedGradient1" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#3B82F6" stopOpacity="0" />
+                <stop offset="50%" stopColor="#60A5FA" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            
+            <path
+              d="M300 400L1300 350"
+              stroke="url(#animatedGradient1)"
+              strokeWidth="2"
+              fill="none"
+              className="animate-pulse"
+              style={{ filter: 'blur(1px)' }}
+            />
+          </svg>
+        </div>
+      </div>
+
+      {/* Main Content - Optimized Layout */}
+      <div className="relative z-10 w-full max-w-lg mx-auto">
+        
+        {/* LOGO SECTION - Close to Credentials */}
+        <div className="text-center mb-4" style={{ animation: 'logoFadeIn 1.2s ease-out' }}>
+          <div className="flex justify-center">
+            <Logo 
+              variant="login" 
+              className="h-48 sm:h-52 md:h-56 lg:h-60 w-auto object-contain drop-shadow-2xl filter brightness-125 contrast-110"
+              style={{
+                filter: 'drop-shadow(0 12px 40px rgba(0, 0, 0, 0.5)) drop-shadow(0 4px 16px rgba(59, 130, 246, 0.3)) brightness(1.25) contrast(1.1)',
+                maxWidth: '500px'
+              }}
+            />
+          </div>
+        </div>
+
+        {/* CREDENTIALS SECTION - Close to Logo */}
+        <div className="w-full max-w-md mx-auto" style={{ animation: 'formFadeIn 1.2s ease-out 0.4s both' }}>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            
+            {/* Username Field - Compact */}
             <div>
-              <label htmlFor="username" className="sr-only">
+              <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2 pl-1">
                 Username
               </label>
               <input
@@ -46,40 +135,155 @@ const Login = () => {
                 name="username"
                 type="text"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                placeholder="Username"
+                className="w-full px-6 py-2.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400/80 focus:border-blue-400/80 focus:bg-white/15 transition-all duration-300 text-base"
+                placeholder="Enter your username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
             </div>
+
+            {/* Password Field - Compact */}
             <div>
-              <label htmlFor="password" className="sr-only">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2 pl-1">
                 Password
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  className="w-full px-6 py-2.5 pr-14 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400/80 focus:border-blue-400/80 focus:bg-white/15 transition-all duration-300 text-base"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-white transition-colors duration-300"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeSlashIcon className="h-5 w-5" />
+                  ) : (
+                    <EyeIcon className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-            >
-              {isLoading ? 'Signing in...' : 'Sign in'}
-            </button>
+            {/* Login Button - Compact */}
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:ring-offset-2 focus:ring-offset-transparent disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                    Signing in...
+                  </div>
+                ) : (
+                  'Sign In'
+                )}
+              </button>
+            </div>
+          </form>
+
+          {/* Footer Info - Compact */}
+          <div className="mt-4 text-center">
+            <p className="text-xs text-gray-400/80">
+              Quotation & Invoicing System
+            </p>
+            <p className="text-xs text-gray-500/80 mt-1">
+              Secure • Professional • Reliable
+            </p>
           </div>
-        </form>
+        </div>
       </div>
+
+      {/* Enhanced CSS animations */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes logoFadeIn {
+            0% {
+              opacity: 0;
+              transform: translateY(-30px) scale(0.8);
+            }
+            60% {
+              opacity: 0.8;
+              transform: translateY(-10px) scale(1.05);
+            }
+            100% {
+              opacity: 1;
+              transform: translateY(0) scale(1);
+            }
+          }
+
+          @keyframes formFadeIn {
+            0% {
+              opacity: 0;
+              transform: translateY(30px);
+            }
+            100% {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+              transform: translateY(30px) scale(0.95);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0) scale(1);
+            }
+          }
+          
+          @keyframes shadowPulse {
+            0%, 100% {
+              box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.8),
+                0 10px 20px -5px rgba(0, 0, 0, 0.6),
+                0 0 0 1px rgba(255, 255, 255, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            }
+            50% {
+              box-shadow: 
+                0 35px 60px -12px rgba(0, 0, 0, 0.9),
+                0 15px 25px -5px rgba(0, 0, 0, 0.7),
+                0 0 0 1px rgba(255, 255, 255, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            }
+          }
+          
+          .shadow-3xl {
+            animation: shadowPulse 4s ease-in-out infinite;
+          }
+          
+          /* Custom scrollbar */
+          ::-webkit-scrollbar {
+            width: 8px;
+          }
+          
+          ::-webkit-scrollbar-track {
+            background: rgba(75, 85, 99, 0.3);
+            border-radius: 4px;
+          }
+          
+          ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.5);
+            border-radius: 4px;
+          }
+          
+          ::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.7);
+          }
+        `
+      }} />
     </div>
   );
 };

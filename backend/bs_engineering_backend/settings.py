@@ -158,6 +158,10 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:3001",
     "http://127.0.0.1:3001",
+    "http://localhost:3002",
+    "http://127.0.0.1:3002",
+    "http://localhost:3005",
+    "http://127.0.0.1:3005",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
@@ -182,12 +186,12 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Company information
 COMPANY_INFO = {
-    'name': 'BS Engineering',
+    'name': 'Business Solution Engineering',
     'full_name': 'Business Solution Engineering',
-    'address': '123 Engineering Street, Tech City, TC 12345',
-    'phone': '+1 (555) 123-4567',
-    'email': 'info@bsengineering.com',
-    'website': 'www.bsengineering.com',
+    'address': 'Suite no 407, 4th Floor, Silver Trade Tower, B46, Block 13-A, Gulshan-e-Iqbal, Karachi, Pakistan: 75300',
+    'phone': 'P: 92.21.34982786 | C: +92.3063216344 | C: +92.3443311303',
+    'email': 'bs@bsconsults.com',
+    'website': 'www.bsconsults.com',
     'tax_id': 'TAX123456789',
 }
 

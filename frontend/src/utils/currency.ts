@@ -59,6 +59,27 @@ export const formatCurrency = (
 };
 
 /**
+ * Smart currency formatting that detects currency from data object
+ * @param amount - The amount to format
+ * @param dataObject - The data object that might contain currency information
+ * @param fallbackCurrency - Fallback currency if none found in data
+ * @returns Formatted amount string
+ */
+export const formatSmartCurrency = (
+  amount: number | string,
+  dataObject?: any,
+  fallbackCurrency: string = DEFAULT_CURRENCY
+): string => {
+  // Look for currency information in various possible fields
+  const detectedCurrency = dataObject?.currency || 
+                          dataObject?.currency_code || 
+                          dataObject?.currencyCode ||
+                          fallbackCurrency;
+  
+  return formatCurrency(amount, detectedCurrency);
+};
+
+/**
  * Get currency name by currency code
  * @param currencyCode - The currency code
  * @returns The currency name

@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { invoicesAPI, clientsAPI, servicesAPI, currencyAPI, Invoice, Client, Service, Currency, CurrencyResponse } from '../services/api';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
+import EnhancedCreateInvoiceModal from '../components/EnhancedCreateInvoiceModal';
+import BulkDeleteToolbar from '../components/BulkDeleteToolbar';
+import BulkDeleteConfirmation from '../components/BulkDeleteConfirmation';
 
 interface InvoiceItem {
   service_id: number;
@@ -22,9 +25,14 @@ const Invoices = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isQuotationModalOpen, setIsQuotationModalOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [selectedInvoices, setSelectedInvoices] = useState<number[]>([]);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [formData, setFormData] = useState({
     client_id: '',
+    po_number: '',
     date: new Date().toISOString().split('T')[0],
     due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     status: 'draft',
@@ -102,6 +110,43 @@ const Invoices = () => {
     }
   };
 
+  const handleStatusChange = async (id: number, newStatus: string) => {
+    try {
+      if (newStatus === 'approved') {
+        await invoicesAPI.approve(id);
+        toast.success('Invoice approved successfully');
+      } else if (newStatus === 'rejected') {
+        const reason = window.prompt('Please provide a reason for rejection (optional):');
+        await invoicesAPI.reject(id, reason || '');
+        toast.success('Invoice rejected');
+      } else if (newStatus === 'paid') {
+        await invoicesAPI.markAsPaid(id);
+        toast.success('Invoice marked as paid');
+      } else {
+        // For other status changes, use the update method
+        await invoicesAPI.update(id, { status: newStatus as any });
+        toast.success(`Invoice status updated to ${newStatus}`);
+      }
+      fetchInvoices();
+    } catch (error) {
+      toast.error(`Failed to update invoice status to ${newStatus}`);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'draft': return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+      case 'sent': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'approved': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'rejected': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      case 'paid': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200';
+      case 'overdue': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      case 'cancelled': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.items.length === 0) {
@@ -109,21 +154,57 @@ const Invoices = () => {
       return;
     }
 
+    let invoiceData: any = null; // Declare outside try block for error handling
+
     try {
-      const invoiceData = {
-        client: parseInt(formData.client_id),
+      // Validate required fields
+      if (!formData.client_id || formData.client_id === '') {
+        toast.error('Please select a client');
+        return;
+      }
+
+      if (!formData.date) {
+        toast.error('Please select an invoice date');
+        return;
+      }
+
+      if (!formData.due_date) {
+        toast.error('Please select a due date');
+        return;
+      }
+
+      const clientId = parseInt(formData.client_id);
+      if (isNaN(clientId)) {
+        toast.error('Invalid client selected');
+        return;
+      }
+
+      invoiceData = {
+        client: clientId,
+        po_number: formData.po_number || '', // Ensure it's not null
         date: formData.date,
         due_date: formData.due_date,
-        status: formData.status as 'draft' | 'sent' | 'paid' | 'overdue', // Type assertion
+        status: formData.status as 'draft' | 'sent' | 'pending' | 'approved' | 'rejected' | 'paid' | 'overdue' | 'cancelled',
         currency: formData.currency,
-        notes: formData.notes,
-        items: formData.items.map(item => ({
-          service: item.service_id,
-          quantity: item.quantity,
-          price: item.price.toString(), // Convert to string for API
-          description: item.description,
-        })),
+        notes: formData.notes || '', // Ensure it's not null
+        items: formData.items.map(item => {
+          const serviceId = parseInt(item.service_id.toString());
+          if (isNaN(serviceId)) {
+            throw new Error(`Invalid service selected for item: ${item.description}`);
+          }
+          
+          return {
+            service: serviceId,
+            quantity: parseInt(item.quantity.toString()) || 1,
+            price: parseFloat(item.price.toString()).toFixed(2), // Ensure proper decimal format
+            description: item.description || '',
+            tax_type: item.tax_type || 'none', // Default tax type
+          };
+        }),
       };
+
+      // Additional validation
+      console.log('Invoice data being sent:', invoiceData);
 
       if (editingInvoice) {
         await invoicesAPI.update(editingInvoice.id, invoiceData);
@@ -136,14 +217,45 @@ const Invoices = () => {
       setEditingInvoice(null);
       resetForm();
       fetchInvoices();
-    } catch (error) {
-      toast.error('Failed to save invoice');
+    } catch (error: any) {
+      console.error('Invoice save error:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Invoice data that was sent:', invoiceData);
+      
+      // Extract detailed error messages
+      let errorMessage = 'Failed to save invoice';
+      
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        
+        // Handle validation errors
+        if (typeof errorData === 'object') {
+          const errorMessages = [];
+          for (const [field, messages] of Object.entries(errorData)) {
+            if (Array.isArray(messages)) {
+              errorMessages.push(`${field}: ${messages.join(', ')}`);
+            } else if (typeof messages === 'string') {
+              errorMessages.push(`${field}: ${messages}`);
+            }
+          }
+          if (errorMessages.length > 0) {
+            errorMessage = errorMessages.join('; ');
+          }
+        } else if (errorData.error || errorData.detail) {
+          errorMessage = errorData.error || errorData.detail;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
     }
   };
 
   const resetForm = () => {
     setFormData({
       client_id: '',
+      po_number: '',
       date: new Date().toISOString().split('T')[0],
       due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       status: 'draft',
@@ -186,6 +298,7 @@ const Invoices = () => {
     setEditingInvoice(invoice);
     setFormData({
       client_id: invoice.client.toString(), // client is already a number (ID)
+      po_number: invoice.po_number || '',
       date: invoice.date,
       due_date: invoice.due_date,
       status: invoice.status,
@@ -214,16 +327,43 @@ const Invoices = () => {
     }
   };
 
-  const markAsPaid = async (id: number) => {
-    if (window.confirm('Mark this invoice as paid?')) {
-      try {
-        await invoicesAPI.markAsPaid(id);
-        toast.success('Invoice marked as paid');
-        fetchInvoices();
-      } catch (error) {
-        toast.error('Failed to mark invoice as paid');
-      }
+  const handleSelectInvoice = (invoiceId: number, isSelected: boolean) => {
+    if (isSelected) {
+      setSelectedInvoices(prev => [...prev, invoiceId]);
+    } else {
+      setSelectedInvoices(prev => prev.filter(id => id !== invoiceId));
     }
+  };
+
+  const handleSelectAllInvoices = (isSelected: boolean) => {
+    if (isSelected) {
+      setSelectedInvoices(invoices.map(invoice => invoice.id));
+    } else {
+      setSelectedInvoices([]);
+    }
+  };
+
+  const handleBulkDelete = () => {
+    setShowBulkDeleteConfirm(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    try {
+      setBulkDeleteLoading(true);
+      await invoicesAPI.bulkDelete(selectedInvoices);
+      toast.success(`Successfully deleted ${selectedInvoices.length} invoices`);
+      setSelectedInvoices([]);
+      setShowBulkDeleteConfirm(false);
+      fetchInvoices();
+    } catch (error) {
+      toast.error('Failed to delete selected invoices');
+    } finally {
+      setBulkDeleteLoading(false);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedInvoices([]);
   };
 
   const generatePDF = async (id: number) => {
@@ -263,16 +403,6 @@ const Invoices = () => {
     return getSubtotalAmount() + getTotalTaxAmount();
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'draft': return 'bg-gray-100 text-gray-800';
-      case 'sent': return 'bg-blue-100 text-blue-800';
-      case 'paid': return 'bg-green-100 text-green-800';
-      case 'overdue': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -286,48 +416,97 @@ const Invoices = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Invoices</h1>
         {canEdit && (
-          <button
-            onClick={openModal}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
-          >
-            <span>+</span>
-            <span>Create Invoice</span>
-          </button>
+          <div className="flex space-x-3">
+            <button
+              onClick={openModal}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+            >
+              <span>+</span>
+              <span>Create Invoice</span>
+            </button>
+            <button
+              onClick={() => setIsQuotationModalOpen(true)}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+            >
+              <span>📄</span>
+              <span>From Quotation</span>
+            </button>
+          </div>
         )}
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <input
-          type="text"
-          placeholder="Search invoices..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-        />
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-        >
-          <option value="">All Statuses</option>
-          <option value="draft">Draft</option>
-          <option value="sent">Sent</option>
-          <option value="paid">Paid</option>
-          <option value="overdue">Overdue</option>
-        </select>
+      <div className="mb-6 space-y-4">
+        {/* Centered Search Bar */}
+        <div className="flex justify-center">
+          <div className="w-full max-w-md relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Search invoices..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 rounded-full bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:bg-white dark:focus:bg-gray-800 dark:text-white text-sm placeholder-gray-400 transition-all duration-200"
+            />
+          </div>
+        </div>
+        
+        {/* Status Filter */}
+        <div className="flex justify-center">
+          <div className="w-full max-w-xs">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-full bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:bg-white dark:focus:bg-gray-800 dark:text-white text-sm transition-all duration-200"
+            >
+              <option value="">All Statuses</option>
+              <option value="draft">Draft</option>
+              <option value="sent">Sent</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="paid">Paid</option>
+              <option value="overdue">Overdue</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+        </div>
       </div>
+
+      {/* Bulk Delete Toolbar */}
+      <BulkDeleteToolbar
+        selectedCount={selectedInvoices.length}
+        onDeleteSelected={handleBulkDelete}
+        onClearSelection={clearSelection}
+        loading={bulkDeleteLoading}
+        entityType="invoices"
+      />
 
       {/* Invoices Table */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
         <table className="min-w-full">
           <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>
+              <th className="px-6 py-3">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  checked={invoices.length > 0 && selectedInvoices.length === invoices.length}
+                  onChange={(e) => handleSelectAllInvoices(e.target.checked)}
+                />
+              </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Client
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Number
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                PO Number
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Date
@@ -349,11 +528,22 @@ const Invoices = () => {
           <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
             {invoices.map((invoice) => (
               <tr key={invoice.id}>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    checked={selectedInvoices.includes(invoice.id)}
+                    onChange={(e) => handleSelectInvoice(invoice.id, e.target.checked)}
+                  />
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                   {invoice.client_name || 'Unknown Client'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                   {invoice.number}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                  {invoice.po_number || '-'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                   {new Date(invoice.date).toLocaleDateString()}
@@ -369,37 +559,56 @@ const Invoices = () => {
                     {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                  <button
-                    onClick={() => generatePDF(invoice.id)}
-                    className="text-blue-600 hover:text-blue-900 dark:text-blue-400"
-                  >
-                    PDF
-                  </button>
-                  {canEdit && (
-                    <>
-                      <button
-                        onClick={() => handleEdit(invoice)}
-                        className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400"
-                      >
-                        Edit
-                      </button>
-                      {invoice.status !== 'paid' && (
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <button
+                      onClick={() => generatePDF(invoice.id)}
+                      className="text-blue-600 hover:text-blue-900 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-2 py-1 rounded transition-colors"
+                      title="Download PDF"
+                    >
+                      PDF
+                    </button>
+                    {canEdit && (
+                      <>
                         <button
-                          onClick={() => markAsPaid(invoice.id)}
-                          className="text-green-600 hover:text-green-900 dark:text-green-400"
+                          onClick={() => handleEdit(invoice)}
+                          className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1 rounded transition-colors"
+                          title="Edit Invoice"
                         >
-                          Mark Paid
+                          Edit
                         </button>
-                      )}
-                      <button
-                        onClick={() => handleDelete(invoice.id)}
-                        className="text-red-600 hover:text-red-900 dark:text-red-400"
-                      >
-                        Delete
-                      </button>
-                    </>
-                  )}
+                        
+                        {/* Quick Status Change Dropdown */}
+                        {(invoice.status !== 'paid' && invoice.status !== 'cancelled') && (
+                          <div className="relative">
+                            <select
+                              value={invoice.status}
+                              onChange={(e) => handleStatusChange(invoice.id, e.target.value)}
+                              className="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                              title="Change Status"
+                            >
+                              <option value="draft">Draft</option>
+                              <option value="sent">Sent</option>
+                              <option value="pending">Pending</option>
+                              <option value="approved">Approved</option>
+                              <option value="rejected">Rejected</option>
+                              <option value="paid">Paid</option>
+                              <option value="overdue">Overdue</option>
+                              <option value="cancelled">Cancelled</option>
+                            </select>
+                          </div>
+                        )}
+                        
+                        <button
+                          onClick={() => handleDelete(invoice.id)}
+                          className="text-red-600 hover:text-red-900 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 px-2 py-1 rounded transition-colors"
+                          title="Delete Invoice"
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -441,6 +650,18 @@ const Invoices = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    PO Number
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter PO Number (optional)"
+                    value={formData.po_number}
+                    onChange={(e) => setFormData({ ...formData, po_number: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Date
                   </label>
                   <input
@@ -477,8 +698,12 @@ const Invoices = () => {
                   >
                     <option value="draft">Draft</option>
                     <option value="sent">Sent</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
                     <option value="paid">Paid</option>
                     <option value="overdue">Overdue</option>
+                    <option value="cancelled">Cancelled</option>
                   </select>
                 </div>
                 <div>
@@ -650,6 +875,25 @@ const Invoices = () => {
           </div>
         </div>
       )}
+
+      {/* Enhanced Create Invoice from Quotation Modal */}
+      <EnhancedCreateInvoiceModal
+        isOpen={isQuotationModalOpen}
+        onClose={() => setIsQuotationModalOpen(false)}
+        onSuccess={() => {
+          fetchInvoices();
+        }}
+      />
+
+      {/* Bulk Delete Confirmation Modal */}
+      <BulkDeleteConfirmation
+        isOpen={showBulkDeleteConfirm}
+        onClose={() => setShowBulkDeleteConfirm(false)}
+        onConfirm={confirmBulkDelete}
+        selectedCount={selectedInvoices.length}
+        entityType="invoices"
+        loading={bulkDeleteLoading}
+      />
     </div>
   );
 };

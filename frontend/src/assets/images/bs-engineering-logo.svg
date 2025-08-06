@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="60" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="30" cy="30" r="25" fill="#1e40af" stroke="#3b82f6" stroke-width="2"/>
+  
+  <!-- BS Letters -->
+  <text x="30" y="38" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="18" font-weight="bold">BS</text>
+  
+  <!-- Company Name -->
+  <text x="65" y="25" fill="#1e40af" font-family="Arial, sans-serif" font-size="16" font-weight="bold">BS Engineering</text>
+  <text x="65" y="42" fill="#64748b" font-family="Arial, sans-serif" font-size="10">Business Solution Engineering</text>
+  
+  <!-- Decorative Line -->
+  <line x1="65" y1="30" x2="190" y2="30" stroke="#e2e8f0" stroke-width="1"/>
+</svg>

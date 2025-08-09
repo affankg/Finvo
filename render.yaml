@@ -2,8 +2,9 @@ services:
   - type: web
     name: bs-engineering-backend
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn bs_engineering_backend.wsgi:application
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn bs_engineering_backend.wsgi:application"
+    rootDir: ./backend
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -11,16 +12,17 @@ services:
           property: connectionString
       - key: SECRET_KEY
         generateValue: true
-      - key: DJANGO_DEBUG
-        value: false
+      - key: DEBUG
+        value: "False"
       - key: ALLOWED_HOSTS
-        value: ".onrender.com"
+        value: "*"
 
   - type: web
     name: bs-engineering-frontend
     env: static
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
+    rootDir: ./frontend
     envVars:
       - key: VITE_API_URL
         fromService:

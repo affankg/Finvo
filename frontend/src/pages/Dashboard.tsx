@@ -5,16 +5,36 @@ import { StatCard, QuickActionButton, StatusBadge } from '../components/Dashboar
 import { BarChart, PieChart } from '../components/Charts';
 import { toast } from 'react-hot-toast';
 import { Link } from 'react-router-dom';
-import { formatCurrency, getCurrencySymbol, DEFAULT_CURRENCY } from '../utils/currency';
+import { formatCurrency, DEFAULT_CURRENCY } from '../utils/currency';
 
-// Icons using emoji for simplicity
+// Enhanced Icons with better visual appeal
 const Icons = {
-  Quote: () => <span className="text-2xl">📋</span>,
-  Invoice: () => <span className="text-2xl">🧾</span>,
-  Money: () => <span className="text-2xl">💰</span>,
+  Quote: () => (
+    <div className="relative">
+      <span className="text-2xl">📋</span>
+      <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+    </div>
+  ),
+  Invoice: () => (
+    <div className="relative">
+      <span className="text-2xl">🧾</span>
+      <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+    </div>
+  ),
+  Money: () => (
+    <div className="relative">
+      <span className="text-2xl">💰</span>
+      <div className="absolute -top-1 -right-1 w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+    </div>
+  ),
   TrendUp: () => <span className="text-2xl">📈</span>,
   Plus: () => <span className="text-xl">➕</span>,
-  Download: () => <span className="text-xl">⬇️</span>,
+  Download: () => (
+    <div className="relative">
+      <span className="text-2xl">📊</span>
+      <div className="absolute -top-1 -right-1 w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
+    </div>
+  ),
   Building: () => <span className="text-xl">🏢</span>,
 };
 
@@ -100,27 +120,27 @@ const Dashboard: React.FC = () => {
 
   const quickActions = [
     {
-      label: 'New Quotation',
+      label: 'Create Quotation',
       icon: <Icons.Quote />,
       action: () => window.location.href = '/quotations',
       color: 'blue' as const
     },
     {
-      label: 'New Invoice',
+      label: 'Generate Invoice',
       icon: <Icons.Invoice />,
       action: () => window.location.href = '/invoices',
       color: 'green' as const
     },
     {
-      label: 'Add Expense',
+      label: 'Track Expenses',
       icon: <Icons.Money />,
       action: () => window.location.href = '/financial-activities',
       color: 'purple' as const
     },
     {
-      label: 'Export Report',
+      label: 'Export Reports',
       icon: <Icons.Download />,
-      action: () => toast.success('Export feature coming soon!'),
+      action: () => toast.success('Advanced reporting coming soon!'),
       color: 'indigo' as const
     }
   ];
@@ -177,22 +197,71 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Quick Actions */}
+      {/* Enhanced Quick Actions */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Quick Actions
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
+            <span className="text-2xl mr-3">⚡</span>
+            Quick Actions
+          </h2>
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            Get things done faster
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {quickActions.map((action, index) => (
-            <QuickActionButton
+            <div
               key={index}
-              label={action.label}
-              icon={action.icon}
-              onClick={action.action}
-              color={action.color}
-              className="w-full"
-            />
+              className="transform transition-all duration-300 hover:scale-105"
+              style={{ animationDelay: `${index * 0.1}s` }}
+            >
+              <QuickActionButton
+                label={action.label}
+                icon={action.icon}
+                onClick={action.action}
+                color={action.color}
+                size="lg"
+                className="w-full h-32 shadow-lg hover:shadow-xl"
+              />
+            </div>
           ))}
+        </div>
+        
+        {/* Additional quick stats below actions */}
+        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg p-4 border border-gray-200/60 dark:border-gray-700/50">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {stats?.pending_quotations || 0}
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">Pending Quotes</div>
+            </div>
+          </div>
+          <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg p-4 border border-gray-200/60 dark:border-gray-700/50">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {stats?.overdue_invoices || 0}
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">Overdue Bills</div>
+            </div>
+          </div>
+          <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg p-4 border border-gray-200/60 dark:border-gray-700/50">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                {stats?.upcoming_due || 0}
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">Due Soon</div>
+            </div>
+          </div>
+          <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg p-4 border border-gray-200/60 dark:border-gray-700/50">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                {stats?.profit_margin || 0}%
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">Profit Margin</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -417,6 +486,91 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Enhanced CSS animations for quick action cards */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes shimmer {
+            0% {
+              transform: translateX(-100%) skewX(-12deg);
+            }
+            100% {
+              transform: translateX(200%) skewX(-12deg);
+            }
+          }
+          
+          @keyframes bounce-light {
+            0%, 100% {
+              transform: translateY(0) scale(1);
+            }
+            50% {
+              transform: translateY(-4px) scale(1.05);
+            }
+          }
+          
+          @keyframes card-hover {
+            0% {
+              transform: translateY(0) scale(1);
+              box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+            100% {
+              transform: translateY(-4px) scale(1.02);
+              box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+          }
+          
+          .animate-shimmer {
+            animation: shimmer 2s ease-in-out;
+          }
+          
+          .animate-bounce-light {
+            animation: bounce-light 0.6s ease-in-out;
+          }
+          
+          .card-hover-animation:hover {
+            animation: card-hover 0.3s ease-out forwards;
+          }
+          
+          /* Enhanced gradient animations */
+          @keyframes gradient-shift {
+            0%, 100% {
+              background-position: 0% 50%;
+            }
+            50% {
+              background-position: 100% 50%;
+            }
+          }
+          
+          .gradient-animation {
+            background-size: 200% 200%;
+            animation: gradient-shift 3s ease infinite;
+          }
+          
+          /* Pulse glow effect */
+          @keyframes pulse-glow {
+            0%, 100% {
+              box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+            }
+            50% {
+              box-shadow: 0 0 20px rgba(59, 130, 246, 0.6), 0 0 30px rgba(59, 130, 246, 0.4);
+            }
+          }
+          
+          .pulse-glow {
+            animation: pulse-glow 2s ease-in-out infinite;
+          }
+          
+          /* Orb floating animation */
+          @keyframes orbFloat {
+            0%, 100% {
+              transform: translateY(0px) scale(1);
+            }
+            50% {
+              transform: translateY(-20px) scale(1.05);
+            }
+          }
+        `
+      }} />
     </div>
   );
 };

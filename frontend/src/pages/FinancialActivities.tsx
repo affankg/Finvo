@@ -5,6 +5,15 @@ import projectService, { Project } from '../services/projectService';
 import { StatusBadge, QuickActionButton } from '../components/DashboardComponents';
 import { toast } from 'react-hot-toast';
 
+// Define FinancialAccount interface
+interface FinancialAccount {
+  id: number;
+  code: string;
+  name: string;
+  account_type: string;
+  is_active: boolean;
+}
+
 // Icon components
 const Icons = {
   Receipt: () => <span className="text-lg">🧾</span>,
@@ -42,6 +51,7 @@ interface ActivityModalProps {
   mode?: 'view' | 'edit' | 'create';
   clients?: Client[];
   projects?: Project[];
+  accounts?: FinancialAccount[];
 }
 
 const ActivityModal: React.FC<ActivityModalProps> = ({ 
@@ -51,7 +61,8 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
   onSave, 
   mode = 'view',
   clients = [],
-  projects = []
+  projects = [],
+  accounts = []
 }) => {
   const [formData, setFormData] = useState<Partial<FinancialActivity>>({});
   const [loading, setLoading] = useState(false);
@@ -64,7 +75,8 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
         activity_type: 'receivable',
         status: 'pending',
         currency: 'USD',
-        transaction_date: new Date().toISOString().split('T')[0]
+        transaction_date: new Date().toISOString().split('T')[0],
+        payment_method: 'bank_transfer'
       });
     }
   }, [activity]);
@@ -73,12 +85,79 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
     e.preventDefault();
     if (!onSave) return;
 
+    // Validate required fields
+    if (!formData.account) {
+      // If no account selected, try to auto-select one
+      if (accounts.length === 0) {
+        toast.error('No financial accounts available. Please contact your administrator to set up accounts first.');
+        return;
+      }
+      
+      // Auto-select the first appropriate account based on activity type
+      let defaultAccount = accounts.find(acc => {
+        switch (formData.activity_type) {
+          case 'receivable':
+            return acc.account_type === 'asset' && acc.name.toLowerCase().includes('receivable');
+          case 'payable':
+            return acc.account_type === 'liability' && acc.name.toLowerCase().includes('payable');
+          case 'expense':
+            return acc.account_type === 'expense';
+          case 'income':
+            return acc.account_type === 'revenue';
+          default:
+            return false;
+        }
+      });
+      
+      // If no specific account found, use the first account of the appropriate type
+      if (!defaultAccount) {
+        const typeMap = {
+          'receivable': 'asset',
+          'payable': 'liability', 
+          'expense': 'expense',
+          'income': 'revenue'
+        };
+        defaultAccount = accounts.find(acc => acc.account_type === typeMap[formData.activity_type as keyof typeof typeMap]);
+      }
+      
+      // If still no account, use the first available account
+      if (!defaultAccount && accounts.length > 0) {
+        defaultAccount = accounts[0];
+      }
+      
+      if (defaultAccount) {
+        setFormData(prev => ({ ...prev, account: defaultAccount.id }));
+        toast.success(`Auto-selected account: ${defaultAccount.name}`);
+      } else {
+        toast.error('Please select an account');
+        return;
+      }
+    }
+    
+    if (!formData.amount || formData.amount <= 0) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+    if (!formData.client) {
+      toast.error('Please select a client');
+      return;
+    }
+    if (!formData.description) {
+      toast.error('Please enter a description');
+      return;
+    }
+
     setLoading(true);
     try {
       await onSave(formData);
       onClose();
-    } catch (error) {
-      toast.error('Failed to save activity');
+    } catch (error: any) {
+      console.error('Save error:', error);
+      const errorMessage = error.response?.data?.detail || 
+                          error.response?.data?.message || 
+                          error.message || 
+                          'Failed to save activity';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -102,6 +181,17 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {accounts.length === 0 && (
+            <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
+              <div className="flex items-center">
+                <Icons.Warning />
+                <span className="ml-2 text-sm text-yellow-800 dark:text-yellow-200">
+                  <strong>No Financial Accounts Found:</strong> Please contact your administrator to set up financial accounts before creating activities.
+                </span>
+              </div>
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2">
@@ -162,20 +252,55 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
               </select>
             </div>
 
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2">
+                Account <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formData.account || ''}
+                onChange={(e) => {
+                  const accountId = parseInt(e.target.value);
+                  const selectedAccount = accounts.find(a => a.id === accountId);
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    account: accountId,
+                    account_name: selectedAccount?.name || ''
+                  }));
+                }}
+                disabled={mode === 'view' || accounts.length === 0}
+                required
+                className="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 font-medium transition-colors duration-200"
+              >
+                <option value="">
+                  {accounts.length === 0 ? 'No accounts available' : 'Select an account'}
+                </option>
+                {accounts.map(account => (
+                  <option key={account.id} value={account.id}>
+                    {account.code} - {account.name} ({account.account_type})
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {accounts.length === 0 
+                  ? 'No accounts available - contact your administrator to set up financial accounts' 
+                  : 'Required: Select the financial account for this transaction'
+                }
+              </p>
+            </div>
+
             {/* Project Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Project (Optional)
               </label>
               <select
-                value={formData.project || ''}
+                value={formData.project_quotation || ''}
                 onChange={(e) => {
                   const projectId = e.target.value ? parseInt(e.target.value) : undefined;
                   const selectedProject = projects.find(p => p.id === projectId);
                   setFormData(prev => ({ 
                     ...prev, 
-                    project: projectId,
-                    project_name: selectedProject?.name || '',
+                    project_quotation: projectId,
                     project_number: selectedProject?.project_number || ''
                   }));
                 }}
@@ -292,10 +417,10 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
               </button>
               <button
                 type="submit"
-                disabled={loading}
-                className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-lg hover:from-indigo-700 hover:to-blue-700 disabled:from-indigo-400 disabled:to-blue-400 transition-all duration-200 shadow-md hover:shadow-lg font-semibold"
+                disabled={loading || accounts.length === 0}
+                className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-lg hover:from-indigo-700 hover:to-blue-700 disabled:from-indigo-400 disabled:to-blue-400 transition-all duration-200 shadow-md hover:shadow-lg font-semibold disabled:cursor-not-allowed"
               >
-                {loading ? 'Saving...' : 'Save'}
+                {loading ? 'Saving...' : accounts.length === 0 ? 'No Accounts Available' : 'Save'}
               </button>
             </div>
           )}
@@ -309,6 +434,7 @@ const FinancialActivities: React.FC = () => {
   const [activities, setActivities] = useState<FinancialActivity[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [accounts, setAccounts] = useState<FinancialAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('activities');
   const [searchTerm, setSearchTerm] = useState('');
@@ -326,6 +452,7 @@ const FinancialActivities: React.FC = () => {
     fetchActivities();
     fetchClients();
     fetchProjects();
+    fetchAccounts();
   }, []);
 
   // Fetch balance sheet when balance sheet tab is selected
@@ -365,6 +492,16 @@ const FinancialActivities: React.FC = () => {
     } catch (error) {
       console.error('Failed to load projects');
       setProjects([]);
+    }
+  };
+
+  const fetchAccounts = async () => {
+    try {
+      const response = await financialAPI.getAccounts();
+      setAccounts(response.data.results || response.data || []);
+    } catch (error) {
+      console.error('Failed to load financial accounts');
+      setAccounts([]);
     }
   };
 
@@ -1209,6 +1346,7 @@ const FinancialActivities: React.FC = () => {
         mode={modalMode}
         clients={clients}
         projects={projects}
+        accounts={accounts}
       />
     </div>
   );

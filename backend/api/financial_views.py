@@ -49,6 +49,28 @@ from .permissions import RoleBasedPermission
 from .models import Client, Quotation, Invoice
 from .serializers import QuotationSerializer
 
+def ensure_default_accounts():
+    """Create basic financial accounts if none exist"""
+    if FinancialAccount.objects.exists():
+        return
+    
+    # Create minimal required accounts
+    accounts_data = [
+        {'code': '1000', 'name': 'Cash', 'type': 'asset'},
+        {'code': '1200', 'name': 'Accounts Receivable', 'type': 'asset'},
+        {'code': '2000', 'name': 'Accounts Payable', 'type': 'liability'},
+        {'code': '4000', 'name': 'Revenue', 'type': 'revenue'},
+        {'code': '5000', 'name': 'Expenses', 'type': 'expense'},
+    ]
+    
+    for account_data in accounts_data:
+        FinancialAccount.objects.create(
+            code=account_data['code'],
+            name=account_data['name'],
+            account_type=account_data['type'],
+            description=f"Default {account_data['name']} account"
+        )
+
 
 class FinancialAccountViewSet(viewsets.ModelViewSet):
     """ViewSet for managing financial accounts (Chart of Accounts)"""
@@ -57,6 +79,9 @@ class FinancialAccountViewSet(viewsets.ModelViewSet):
     permission_classes = [RoleBasedPermission]
     
     def get_queryset(self):
+        # Ensure default accounts exist
+        ensure_default_accounts()
+        
         queryset = super().get_queryset()
         
         # Filter by account type
@@ -97,6 +122,9 @@ class FinancialActivityViewSet(viewsets.ModelViewSet):
         return FinancialActivitySerializer
     
     def get_queryset(self):
+        # Ensure default accounts exist
+        ensure_default_accounts()
+        
         queryset = super().get_queryset()
         
         # Filter by activity type

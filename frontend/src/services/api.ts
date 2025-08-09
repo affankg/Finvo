@@ -210,7 +210,7 @@ export interface Invoice {
   client_name?: string;
   date: string;
   due_date: string;
-  status: 'draft' | 'sent' | 'pending' | 'approved' | 'rejected' | 'paid' | 'overdue' | 'cancelled';
+  status: 'draft' | 'sent' | 'approved' | 'paid' | 'overdue' | 'cancelled';
   currency: string;
   currency_symbol?: string;
   formatted_total?: string;

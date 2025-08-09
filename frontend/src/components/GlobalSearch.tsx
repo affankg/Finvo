@@ -98,7 +98,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ className = '' }) => {
           searchResults.push({
             id: client.id,
             title: client.name,
-            subtitle: `${client.company} • ${client.email}`,
+            subtitle: `${client.email || 'No email'} • ${client.phone || 'No phone'}`,
             type: 'client',
             route: `/clients/${client.id}`,
             icon: '👤'
@@ -112,7 +112,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ className = '' }) => {
           searchResults.push({
             id: service.id,
             title: service.name,
-            subtitle: service.description,
+            subtitle: `${service.description || 'No description'} • $${service.price || 0}`,
             type: 'service',
             route: `/services/${service.id}`,
             icon: '⚙️'
@@ -125,7 +125,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ className = '' }) => {
         quotationsRes.value.data.results.slice(0, 5).forEach((quotation: any) => {
           searchResults.push({
             id: quotation.id,
-            title: `Quote #${quotation.number}`,
+            title: `Quotation #${quotation.number}`,
             subtitle: `${quotation.client_name} • ${quotation.formatted_total || quotation.total_amount}`,
             type: 'quotation',
             route: `/quotations/${quotation.id}`,
@@ -191,88 +191,309 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ className = '' }) => {
   };
 
   return (
-    <div ref={searchRef} className={`relative ${className}`}>
-      {/* Search Input */}
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-          <svg className="w-5 h-5 text-gray-400 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+    <div ref={searchRef} className={`relative ${className}`} key="global-search-v3">
+      {/* Enhanced Modern Search Input */}
+      <div className="relative group">
+        {/* Enhanced glass morphism background with multiple layers */}
+        <div className="absolute inset-0 bg-gradient-to-r from-white/60 via-white/40 to-white/60 dark:from-gray-800/80 dark:via-gray-900/60 dark:to-gray-800/80 rounded-2xl backdrop-blur-md border border-white/20 dark:border-gray-700/50 shadow-lg"></div>
+        
+        {/* Dynamic focus glow effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 rounded-2xl opacity-0 group-focus-within:opacity-100 transition-all duration-500 blur-xl scale-110"></div>
+        
+        {/* Enhanced animated border on focus */}
+        <div className="absolute inset-0 rounded-2xl border-2 border-transparent bg-gradient-to-r from-blue-500/30 via-indigo-500/30 to-purple-500/30 opacity-0 group-focus-within:opacity-100 transition-all duration-300 blur-sm"></div>
+        
+        {/* Search icon with enhanced animations */}
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-20">
+          <div className="relative">
+            <svg className="w-5 h-5 text-gray-500 dark:text-gray-400 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-all duration-300 group-focus-within:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            {/* Animated pulse ring on focus */}
+            <div className="absolute inset-0 rounded-full border-2 border-blue-500/30 opacity-0 group-focus-within:opacity-100 group-focus-within:animate-ping"></div>
+          </div>
         </div>
+        
+        {/* Enhanced input field with better visibility */}
         <input
           ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.length >= 2 && setIsOpen(true)}
-          placeholder="Search clients, services, invoices..."
-          className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 focus:bg-white dark:focus:bg-gray-800 transition-all duration-300 text-sm shadow-sm hover:shadow-md focus:shadow-lg"
+          onBlur={() => {
+            setTimeout(() => setIsOpen(false), 200);
+          }}
+          placeholder="Search clients, invoices, quotations..."
+          className="relative z-20 w-full pl-14 pr-6 py-3.5 bg-transparent border-0 rounded-2xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm font-medium focus:outline-none transition-all duration-300 hover:placeholder-gray-600 dark:hover:placeholder-gray-300"
         />
+
+        {/* Enhanced loading indicator */}
         {loading && (
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="absolute inset-y-0 right-0 pr-4 flex items-center z-20">
+            <div className="relative">
+              <div className="w-4 h-4 border-2 border-gray-300/30 border-t-blue-600 dark:border-gray-600/30 dark:border-t-blue-400 rounded-full animate-spin"></div>
+              <div className="absolute inset-0 w-4 h-4 border-2 border-transparent border-t-indigo-500/50 rounded-full animate-spin animate-reverse"></div>
+            </div>
           </div>
         )}
+
+        {/* Enhanced shimmer effect on hover */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent dark:via-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -skew-x-12 group-hover:animate-shimmer rounded-2xl"></div>
+        
+        {/* Enhanced focus indicator with gradient animation */}
+        <div className="absolute bottom-0 left-1/2 w-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 group-focus-within:w-full group-focus-within:left-0 transition-all duration-500 rounded-full shadow-lg shadow-blue-500/30"></div>
       </div>
 
-      {/* Search Results Dropdown */}
+      {/* Enhanced Search Results Dropdown */}
       {isOpen && results.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
-          <div className="p-2">
-            <div className="text-xs text-gray-500 dark:text-gray-400 px-2 py-1 mb-2 border-b border-gray-200 dark:border-gray-700">
-              {results.length} result{results.length !== 1 ? 's' : ''} found
-            </div>
-            {results.map((result) => (
-              <div
-                key={`${result.type}-${result.id}`}
-                onClick={() => handleResultClick(result)}
-                className="flex items-center p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors group"
-              >
-                <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-600 group-hover:scale-105 transition-transform">
-                  <span className="text-sm">{result.icon}</span>
-                </div>
-                <div className="ml-3 flex-1 min-w-0">
-                  <div className="flex items-center space-x-2">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                      {result.title}
-                    </p>
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(result.type)}`}>
-                      {result.type}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    {result.subtitle}
-                  </p>
-                </div>
-                <div className="flex-shrink-0 ml-2">
-                  <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
+        <div className="absolute top-full left-0 right-0 mt-3 glass-effect rounded-2xl shadow-2xl z-50 max-h-80 overflow-hidden enhanced-focus animate-float-glow">
+          {/* Enhanced glass morphism layers */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/20 to-white/40 dark:from-gray-900/60 dark:via-gray-900/40 dark:to-gray-900/60 rounded-2xl"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-transparent to-purple-500/5 rounded-2xl"></div>
+          
+          <div className="relative z-10 p-3">
+            {/* Enhanced header with gradient */}
+            <div className="flex items-center justify-between px-4 py-2.5 mb-2 bg-gradient-to-r from-gray-50/80 to-gray-100/60 dark:from-gray-800/60 dark:to-gray-700/40 rounded-xl border border-gray-200/30 dark:border-gray-600/30">
+              <span className="text-sm font-semibold bg-gradient-to-r from-gray-700 to-gray-900 dark:from-gray-300 dark:to-gray-100 bg-clip-text text-transparent">
+                {results.length} result{results.length !== 1 ? 's' : ''} found
+              </span>
+              <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
+                <kbd className="px-2 py-1 bg-white/60 dark:bg-gray-800/60 rounded border border-gray-300/30 dark:border-gray-600/30 font-mono">↵</kbd>
+                <span>to select</span>
               </div>
-            ))}
+            </div>
+            
+            {/* Enhanced results list with better styling */}
+            <div className="space-y-1 max-h-64 overflow-y-auto custom-scrollbar">
+              {results.map((result, index) => (
+                <div
+                  key={`${result.type}-${result.id}`}
+                  onClick={() => handleResultClick(result)}
+                  className="group result-item flex items-center p-3.5 rounded-xl hover:shadow-md cursor-pointer transition-all duration-200 border border-transparent hover:border-blue-200/30 dark:hover:border-blue-700/30"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  {/* Enhanced icon with glow effect */}
+                  <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-white/80 to-gray-100/60 dark:from-gray-800/80 dark:to-gray-700/60 group-hover:from-blue-50 dark:group-hover:from-blue-900/30 group-hover:to-blue-100/60 dark:group-hover:to-blue-800/30 transition-all duration-200 border border-gray-200/40 dark:border-gray-600/40 group-hover:border-blue-300/50 dark:group-hover:border-blue-600/50 group-hover:shadow-lg group-hover:scale-105">
+                    <span className="text-base group-hover:scale-110 transition-transform duration-200">{result.icon}</span>
+                  </div>
+                  
+                  {/* Enhanced content */}
+                  <div className="ml-4 flex-1 min-w-0">
+                    <div className="flex items-center space-x-3">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate group-hover:text-blue-900 dark:group-hover:text-blue-100 transition-colors duration-200">
+                        {result.title}
+                      </p>
+                      <span className={`px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all duration-200 ${getTypeColor(result.type)} group-hover:scale-105 group-hover:shadow-sm`}>
+                        {result.type}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-300 truncate mt-1 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-200">
+                      {result.subtitle}
+                    </p>
+                  </div>
+                  
+                  {/* Enhanced arrow with animation */}
+                  <div className="flex-shrink-0 ml-3 p-2 rounded-lg bg-gray-100/60 dark:bg-gray-700/60 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-all duration-200 group-hover:scale-110">
+                    <svg className="w-4 h-4 text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
 
-      {/* No Results */}
+      {/* Enhanced No Results State */}
       {isOpen && !loading && query.length >= 2 && results.length === 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
-          <div className="p-4 text-center">
-            <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              No results found for "{query}"
+        <div className="absolute top-full left-0 right-0 mt-3 glass-effect rounded-2xl shadow-2xl z-50 enhanced-focus">
+          {/* Enhanced glass morphism layers */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/20 to-white/40 dark:from-gray-900/60 dark:via-gray-900/40 dark:to-gray-900/60 rounded-2xl"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 via-transparent to-red-500/5 rounded-2xl"></div>
+          
+          <div className="relative z-10 p-8 text-center">
+            {/* Enhanced empty state icon with glow */}
+            <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center rounded-2xl bg-gradient-to-br from-orange-100/80 to-red-100/60 dark:from-orange-900/40 dark:to-red-900/30 border border-orange-200/50 dark:border-orange-700/30 shadow-lg animate-float-glow">
+              <svg className="w-7 h-7 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            
+            {/* Enhanced text with gradient */}
+            <h3 className="text-lg font-semibold bg-gradient-to-r from-gray-700 to-gray-900 dark:from-gray-300 dark:to-gray-100 bg-clip-text text-transparent mb-2">
+              No results found
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+              No matches for "<span className="font-semibold text-gray-800 dark:text-gray-200">{query}</span>"
             </p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-              Try searching for clients, services, invoices, or expenses
-            </p>
+            
+            {/* Enhanced suggestions */}
+            <div className="bg-gradient-to-r from-blue-50/80 to-indigo-50/60 dark:from-blue-900/20 dark:to-indigo-900/15 rounded-xl p-4 border border-blue-200/30 dark:border-blue-700/20">
+              <p className="text-xs text-blue-700 dark:text-blue-300 font-medium mb-2">
+                💡 Try searching for:
+              </p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {['Clients', 'Invoices', 'Quotations', 'Services', 'Expenses'].map((item) => (
+                  <span key={item} className="px-2.5 py-1 bg-blue-100/60 dark:bg-blue-800/30 text-xs font-medium text-blue-700 dark:text-blue-300 rounded-lg border border-blue-200/40 dark:border-blue-600/30">
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Removed search hint as requested - no more "Press Ctrl+K to search" text */}
+      {/* Enhanced CSS animations and styles */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          /* Enhanced shimmer animation */
+          @keyframes shimmer {
+            0% {
+              transform: translateX(-100%) skewX(-15deg);
+              opacity: 0;
+            }
+            50% {
+              opacity: 1;
+            }
+            100% {
+              transform: translateX(200%) skewX(-15deg);
+              opacity: 0;
+            }
+          }
+          
+          /* Reverse spin animation for loading */
+          @keyframes reverse-spin {
+            from {
+              transform: rotate(360deg);
+            }
+            to {
+              transform: rotate(0deg);
+            }
+          }
+          
+          /* Enhanced pulse animation */
+          @keyframes enhanced-pulse {
+            0%, 100% {
+              opacity: 0;
+              transform: scale(1);
+            }
+            50% {
+              opacity: 1;
+              transform: scale(1.1);
+            }
+          }
+          
+          /* Floating glow effect */
+          @keyframes float-glow {
+            0%, 100% {
+              transform: translateY(0) scale(1);
+              opacity: 0.6;
+            }
+            50% {
+              transform: translateY(-2px) scale(1.05);
+              opacity: 1;
+            }
+          }
+          
+          /* Gradient flow animation */
+          @keyframes gradient-flow {
+            0%, 100% {
+              background-position: 0% 50%;
+            }
+            50% {
+              background-position: 100% 50%;
+            }
+          }
+          
+          .animate-shimmer {
+            animation: shimmer 2s ease-in-out;
+          }
+          
+          .animate-reverse {
+            animation: reverse-spin 1.5s linear infinite;
+          }
+          
+          .animate-enhanced-pulse {
+            animation: enhanced-pulse 2s ease-in-out infinite;
+          }
+          
+          .animate-float-glow {
+            animation: float-glow 3s ease-in-out infinite;
+          }
+          
+          .animate-gradient-flow {
+            background-size: 200% 200%;
+            animation: gradient-flow 4s ease infinite;
+          }
+          
+          /* Custom scrollbar for search results */
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+          }
+          
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 3px;
+          }
+          
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            border-radius: 3px;
+            transition: background 0.3s ease;
+          }
+          
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #2563eb, #4f46e5);
+          }
+          
+          .dark .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+          }
+          
+          .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #60a5fa, #818cf8);
+          }
+          
+          .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+          }
+          
+          /* Enhanced glass morphism */
+          .glass-effect {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+          }
+          
+          .dark .glass-effect {
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid rgba(75, 85, 99, 0.3);
+          }
+          
+          /* Enhanced focus states */
+          .enhanced-focus:focus-within {
+            transform: translateY(-1px);
+            box-shadow: 
+              0 10px 25px -5px rgba(59, 130, 246, 0.2),
+              0 4px 6px -2px rgba(59, 130, 246, 0.1),
+              0 0 0 1px rgba(59, 130, 246, 0.1);
+          }
+          
+          /* Result item hover enhancement */
+          .result-item:hover {
+            transform: translateX(4px);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(99, 102, 241, 0.05));
+          }
+          
+          .dark .result-item:hover {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
+          }
+        `
+      }} />
     </div>
   );
 };

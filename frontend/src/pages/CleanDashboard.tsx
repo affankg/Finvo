@@ -250,26 +250,118 @@ const CleanDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Quick Actions */}
+        {/* Enhanced Quick Actions */}
         <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
+              <span className="text-2xl mr-3">⚡</span>
+              Quick Actions
+            </h2>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              Get things done faster
+            </div>
+          </div>
+          
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {quickActions.map((action) => (
-              <button
+            {quickActions.map((action, index) => (
+              <div
                 key={action.label}
-                onClick={action.action}
-                className={`${action.color} text-white p-4 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md group`}
+                className="transform transition-all duration-300 hover:scale-105"
+                style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <div className="flex flex-col items-center space-y-2">
-                  <div className="group-hover:scale-110 transition-transform duration-200">
+                <button
+                  onClick={action.action}
+                  className={`
+                    relative group overflow-hidden w-full
+                    flex flex-col items-center justify-center space-y-2 
+                    rounded-xl font-semibold border
+                    backdrop-blur-sm p-4
+                    transition-all duration-300 ease-out
+                    hover:scale-105 hover:shadow-xl hover:-translate-y-2
+                    active:scale-95 active:translate-y-0
+                    card-hover-animation
+                    ${action.label === 'New Quotation' ? 'bg-gradient-to-br from-green-50/80 via-green-100/60 to-green-200/40 border-green-200/60 dark:from-green-900/30 dark:via-green-800/20 dark:to-green-700/10 dark:border-green-700/50 text-green-700 dark:text-green-300 hover:from-green-500/30 hover:via-green-600/25 hover:to-green-700/20 hover:shadow-green-500/30 hover:border-green-300/80 dark:hover:from-green-500/40 dark:hover:via-green-600/30 dark:hover:to-green-700/20' : 
+                      action.label === 'New Invoice' ? 'bg-gradient-to-br from-green-50/80 via-green-100/60 to-green-200/40 border-green-200/60 dark:from-green-900/30 dark:via-green-800/20 dark:to-green-700/10 dark:border-green-700/50 text-green-700 dark:text-green-300 hover:from-green-500/30 hover:via-green-600/25 hover:to-green-700/20 hover:shadow-green-500/30 hover:border-green-300/80 dark:hover:from-green-500/40 dark:hover:via-green-600/30 dark:hover:to-green-700/20' :
+                      action.label === 'Add Expense' ? 'bg-gradient-to-br from-purple-50/80 via-purple-100/60 to-purple-200/40 border-purple-200/60 dark:from-purple-900/30 dark:via-purple-800/20 dark:to-purple-700/10 dark:border-purple-700/50 text-purple-700 dark:text-purple-300 hover:from-purple-500/30 hover:via-purple-600/25 hover:to-purple-700/20 hover:shadow-purple-500/30 hover:border-purple-300/80 dark:hover:from-purple-500/40 dark:hover:via-purple-600/30 dark:hover:to-purple-700/20' :
+                      action.label === 'Add Client' ? 'bg-gradient-to-br from-indigo-50/80 via-indigo-100/60 to-indigo-200/40 border-indigo-200/60 dark:from-indigo-900/30 dark:via-indigo-800/20 dark:to-indigo-700/10 dark:border-indigo-700/50 text-indigo-700 dark:text-indigo-300 hover:from-indigo-500/30 hover:via-indigo-600/25 hover:to-indigo-700/20 hover:shadow-indigo-500/30 hover:border-indigo-300/80 dark:hover:from-indigo-500/40 dark:hover:via-indigo-600/30 dark:hover:to-indigo-700/20' :
+                      action.label === 'View Analytics' ? 'bg-gradient-to-br from-orange-50/80 via-orange-100/60 to-orange-200/40 border-orange-200/60 dark:from-orange-900/30 dark:via-orange-800/20 dark:to-orange-700/10 dark:border-orange-700/50 text-orange-700 dark:text-orange-300 hover:from-orange-500/30 hover:via-orange-600/25 hover:to-orange-700/20 hover:shadow-orange-500/30 hover:border-orange-300/80 dark:hover:from-orange-500/40 dark:hover:via-orange-600/30 dark:hover:to-orange-700/20' :
+                      'bg-gradient-to-br from-gray-50/80 via-gray-100/60 to-gray-200/40 border-gray-200/60 dark:from-gray-900/30 dark:via-gray-800/20 dark:to-gray-700/10 dark:border-gray-700/50 text-gray-700 dark:text-gray-300 hover:from-gray-500/30 hover:via-gray-600/25 hover:to-gray-700/20 hover:shadow-gray-500/30 hover:border-gray-300/80 dark:hover:from-gray-500/40 dark:hover:via-gray-600/30 dark:hover:to-gray-700/20'}
+                  `}
+                  style={{
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                  }}
+                >
+                  {/* Enhanced animated background overlay with color-specific glow */}
+                  <div className={`
+                    absolute inset-0 opacity-0 group-hover:opacity-100 
+                    transition-all duration-500 ease-out
+                    transform -skew-x-12 group-hover:animate-shimmer
+                    ${action.label === 'New Quotation' ? 'bg-gradient-to-r from-transparent via-green-400/20 to-transparent' :
+                      action.label === 'New Invoice' ? 'bg-gradient-to-r from-transparent via-green-400/20 to-transparent' :
+                      action.label === 'Add Expense' ? 'bg-gradient-to-r from-transparent via-purple-400/20 to-transparent' :
+                      action.label === 'Add Client' ? 'bg-gradient-to-r from-transparent via-indigo-400/20 to-transparent' :
+                      action.label === 'View Analytics' ? 'bg-gradient-to-r from-transparent via-orange-400/20 to-transparent' :
+                      'bg-gradient-to-r from-transparent via-gray-400/20 to-transparent'}
+                  `}></div>
+                  
+                  {/* Color-specific background glow effect */}
+                  <div className={`
+                    absolute inset-0 rounded-xl opacity-0 group-hover:opacity-60 
+                    transition-all duration-500 ease-out blur-xl
+                    ${action.label === 'New Quotation' ? 'bg-green-500/20' :
+                      action.label === 'New Invoice' ? 'bg-green-500/20' :
+                      action.label === 'Add Expense' ? 'bg-purple-500/20' :
+                      action.label === 'Add Client' ? 'bg-indigo-500/20' :
+                      action.label === 'View Analytics' ? 'bg-orange-500/20' :
+                      'bg-gray-500/20'}
+                  `}></div>
+                  
+                  {/* Enhanced icon with bounce animation */}
+                  <div className={`transform transition-transform duration-300 group-hover:scale-110 group-hover:animate-bounce-light ${
+                    action.label === 'New Quotation' ? 'text-green-600 dark:text-green-400' :
+                    action.label === 'New Invoice' ? 'text-green-600 dark:text-green-400' :
+                    action.label === 'Add Expense' ? 'text-purple-600 dark:text-purple-400' :
+                    action.label === 'Add Client' ? 'text-indigo-600 dark:text-indigo-400' :
+                    action.label === 'View Analytics' ? 'text-yellow-600 dark:text-yellow-400' :
+                    'text-gray-600 dark:text-gray-400'
+                  }`}>
                     {action.icon}
                   </div>
-                  <div className="text-center">
-                    <div className="font-medium text-sm">{action.label}</div>
-                    <div className="text-xs opacity-90">{action.description}</div>
+                  
+                  <div className="text-center relative z-20">
+                    <div className={`font-semibold text-sm group-hover:font-bold transition-all duration-300 ${
+                      action.label === 'New Quotation' ? 'text-green-800 dark:text-green-200 group-hover:text-green-900 dark:group-hover:text-green-100' :
+                      action.label === 'New Invoice' ? 'text-green-800 dark:text-green-200 group-hover:text-green-900 dark:group-hover:text-green-100' :
+                      action.label === 'Add Expense' ? 'text-purple-800 dark:text-purple-200 group-hover:text-purple-900 dark:group-hover:text-purple-100' :
+                      action.label === 'Add Client' ? 'text-indigo-800 dark:text-indigo-200 group-hover:text-indigo-900 dark:group-hover:text-indigo-100' :
+                      action.label === 'View Analytics' ? 'text-orange-800 dark:text-orange-200 group-hover:text-orange-900 dark:group-hover:text-orange-100' :
+                      'text-gray-800 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-gray-100'
+                    }`}>
+                      {action.label}
+                    </div>
+                    <div className={`text-xs opacity-80 group-hover:opacity-100 transition-all duration-300 ${
+                      action.label === 'New Quotation' ? 'text-green-600 dark:text-green-300 group-hover:text-green-700 dark:group-hover:text-green-200' :
+                      action.label === 'New Invoice' ? 'text-green-600 dark:text-green-300 group-hover:text-green-700 dark:group-hover:text-green-200' :
+                      action.label === 'Add Expense' ? 'text-purple-600 dark:text-purple-300 group-hover:text-purple-700 dark:group-hover:text-purple-200' :
+                      action.label === 'Add Client' ? 'text-indigo-600 dark:text-indigo-300 group-hover:text-indigo-700 dark:group-hover:text-indigo-200' :
+                      action.label === 'View Analytics' ? 'text-orange-600 dark:text-orange-300 group-hover:text-orange-700 dark:group-hover:text-orange-200' :
+                      'text-gray-600 dark:text-gray-300 group-hover:text-gray-700 dark:group-hover:text-gray-200'
+                    }`}>
+                      {action.description}
+                    </div>
                   </div>
-                </div>
-              </button>
+                  
+                  {/* Color-coordinated pulse effect indicator */}
+                  <div className={`absolute top-2 right-2 w-2 h-2 rounded-full opacity-30 group-hover:opacity-60 animate-pulse ${
+                    action.label === 'New Quotation' ? 'bg-green-600 dark:bg-green-400' :
+                    action.label === 'New Invoice' ? 'bg-green-600 dark:bg-green-400' :
+                    action.label === 'Add Expense' ? 'bg-purple-600 dark:bg-purple-400' :
+                    action.label === 'Add Client' ? 'bg-indigo-600 dark:bg-indigo-400' :
+                    action.label === 'View Analytics' ? 'bg-orange-600 dark:bg-orange-400' :
+                    'bg-gray-600 dark:bg-gray-400'
+                  }`}></div>
+                </button>
+              </div>
             ))}
           </div>
         </div>
@@ -333,92 +425,263 @@ const CleanDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Overview Stats */}
+          {/* Enhanced Overview Stats */}
           <div className="space-y-6">
-            {/* Quick Stats */}
+            {/* Quick Stats with Enhanced Colors */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Overview</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                <span className="text-xl mr-2">📊</span>
+                Quick Overview
+              </h3>
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Icons.Quote />
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Total Quotations</span>
-                  </div>
-                  <span className="font-semibold text-gray-900 dark:text-white">{stats.total_quotations || 0}</span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Icons.Invoice />
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Total Invoices</span>
-                  </div>
-                  <span className="font-semibold text-gray-900 dark:text-white">{stats.total_invoices || 0}</span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Icons.Client />
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Active Clients</span>
-                  </div>
-                  <span className="font-semibold text-gray-900 dark:text-white">{stats.total_clients || 0}</span>
-                </div>
-                
-                <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
-                  <div className="flex items-center space-x-2">
-                    <Icons.TrendUp />
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Total Revenue</span>
-                  </div>
-                  <span className="font-bold text-green-600 dark:text-green-400">
-                    {formatCurrency(stats.total_amount || 0, DEFAULT_CURRENCY)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Urgent Items */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Requires Attention</h3>
-              <div className="space-y-3">
-                {stats.pending_quotations ? (
-                  <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                    <div className="flex items-center space-x-2">
-                      <Icons.Warning />
-                      <span className="text-sm text-yellow-800 dark:text-yellow-200">Pending Quotations</span>
+                {/* Total Quotations - Blue Theme */}
+                <div className="relative group overflow-hidden p-4 rounded-xl border transition-all duration-300 hover:scale-102 hover:shadow-lg hover:-translate-y-1 cursor-pointer
+                                bg-gradient-to-br from-blue-500/10 via-blue-600/5 to-blue-700/10 
+                                border-blue-200/60 dark:border-blue-700/50 
+                                hover:from-blue-500/20 hover:via-blue-600/15 hover:to-blue-700/20
+                                hover:shadow-blue-500/25"
+                     style={{
+                       backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)'
+                     }}>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -skew-x-12 group-hover:animate-shimmer"></div>
+                  <div className="flex items-center justify-between relative z-10">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform duration-300">
+                        <Icons.Quote />
+                      </div>
+                      <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Total Quotations</span>
                     </div>
-                    <span className="font-semibold text-yellow-800 dark:text-yellow-200">{stats.pending_quotations}</span>
+                    <span className="font-bold text-xl text-blue-800 dark:text-blue-200 group-hover:scale-110 transition-transform duration-300">
+                      {stats.total_quotations || 0}
+                    </span>
                   </div>
-                ) : null}
+                  <div className="absolute top-2 right-2 w-2 h-2 bg-blue-500 rounded-full opacity-30 group-hover:opacity-60 animate-pulse"></div>
+                </div>
                 
-                {stats.overdue_invoices ? (
-                  <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                    <div className="flex items-center space-x-2">
-                      <Icons.Warning />
-                      <span className="text-sm text-red-800 dark:text-red-200">Overdue Invoices</span>
+                {/* Total Invoices - Green Theme */}
+                <div className="relative group overflow-hidden p-4 rounded-xl border transition-all duration-300 hover:scale-102 hover:shadow-lg hover:-translate-y-1 cursor-pointer
+                                bg-gradient-to-br from-green-500/10 via-green-600/5 to-green-700/10 
+                                border-green-200/60 dark:border-green-700/50 
+                                hover:from-green-500/20 hover:via-green-600/15 hover:to-green-700/20
+                                hover:shadow-green-500/25"
+                     style={{
+                       backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)'
+                     }}>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -skew-x-12 group-hover:animate-shimmer"></div>
+                  <div className="flex items-center justify-between relative z-10">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform duration-300">
+                        <Icons.Invoice />
+                      </div>
+                      <span className="text-sm font-medium text-green-700 dark:text-green-300">Total Invoices</span>
                     </div>
-                    <span className="font-semibold text-red-800 dark:text-red-200">{stats.overdue_invoices}</span>
+                    <span className="font-bold text-xl text-green-800 dark:text-green-200 group-hover:scale-110 transition-transform duration-300">
+                      {stats.total_invoices || 0}
+                    </span>
                   </div>
-                ) : null}
+                  <div className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full opacity-30 group-hover:opacity-60 animate-pulse"></div>
+                </div>
                 
-                {stats.pending_payments ? (
-                  <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <div className="flex items-center space-x-2">
-                      <Icons.CreditCard />
-                      <span className="text-sm text-blue-800 dark:text-blue-200">Pending Payments</span>
+                {/* Active Clients - Purple Theme */}
+                <div className="relative group overflow-hidden p-4 rounded-xl border transition-all duration-300 hover:scale-102 hover:shadow-lg hover:-translate-y-1 cursor-pointer
+                                bg-gradient-to-br from-purple-500/10 via-purple-600/5 to-purple-700/10 
+                                border-purple-200/60 dark:border-purple-700/50 
+                                hover:from-purple-500/20 hover:via-purple-600/15 hover:to-purple-700/20
+                                hover:shadow-purple-500/25"
+                     style={{
+                       backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)'
+                     }}>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -skew-x-12 group-hover:animate-shimmer"></div>
+                  <div className="flex items-center justify-between relative z-10">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform duration-300">
+                        <Icons.Client />
+                      </div>
+                      <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Active Clients</span>
                     </div>
-                    <span className="font-semibold text-blue-800 dark:text-blue-200">{stats.pending_payments}</span>
+                    <span className="font-bold text-xl text-purple-800 dark:text-purple-200 group-hover:scale-110 transition-transform duration-300">
+                      {stats.total_clients || 0}
+                    </span>
                   </div>
-                ) : null}
+                  <div className="absolute top-2 right-2 w-2 h-2 bg-purple-500 rounded-full opacity-30 group-hover:opacity-60 animate-pulse"></div>
+                </div>
                 
-                {!stats.pending_quotations && !stats.overdue_invoices && !stats.pending_payments && (
-                  <div className="text-center py-4">
-                    <p className="text-gray-500 dark:text-gray-400 text-sm">All caught up! 🎉</p>
+                {/* Total Revenue - Gold/Orange Theme */}
+                <div className="relative group overflow-hidden p-4 rounded-xl border transition-all duration-300 hover:scale-102 hover:shadow-lg hover:-translate-y-1 cursor-pointer
+                                bg-gradient-to-br from-orange-500/10 via-yellow-500/5 to-orange-600/10 
+                                border-orange-200/60 dark:border-orange-700/50 
+                                hover:from-orange-500/20 hover:via-yellow-500/15 hover:to-orange-600/20
+                                hover:shadow-orange-500/25"
+                     style={{
+                       backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)'
+                     }}>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -skew-x-12 group-hover:animate-shimmer"></div>
+                  <div className="flex items-center justify-between relative z-10">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 group-hover:scale-110 transition-transform duration-300">
+                        <Icons.TrendUp />
+                      </div>
+                      <span className="text-sm font-medium text-orange-700 dark:text-orange-300">Total Revenue</span>
+                    </div>
+                    <span className="font-bold text-xl text-orange-800 dark:text-orange-200 group-hover:scale-110 transition-transform duration-300">
+                      {formatCurrency(stats.total_amount || 0, DEFAULT_CURRENCY)}
+                    </span>
                   </div>
-                )}
+                  <div className="absolute top-2 right-2 w-2 h-2 bg-orange-500 rounded-full opacity-30 group-hover:opacity-60 animate-pulse"></div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Enhanced CSS animations for quick action cards */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes shimmer {
+            0% {
+              transform: translateX(-100%) skewX(-12deg);
+            }
+            100% {
+              transform: translateX(200%) skewX(-12deg);
+            }
+          }
+          
+          @keyframes bounce-light {
+            0%, 100% {
+              transform: translateY(0) scale(1);
+            }
+            50% {
+              transform: translateY(-4px) scale(1.05);
+            }
+          }
+          
+          @keyframes card-hover {
+            0% {
+              transform: translateY(0) scale(1);
+              box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+            100% {
+              transform: translateY(-8px) scale(1.05);
+              box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+            }
+          }
+          
+          @keyframes glow-pulse {
+            0%, 100% {
+              opacity: 0.4;
+              transform: scale(1);
+            }
+            50% {
+              opacity: 0.8;
+              transform: scale(1.1);
+            }
+          }
+          
+          .animate-shimmer {
+            animation: shimmer 1.5s ease-in-out;
+          }
+          
+          .animate-bounce-light {
+            animation: bounce-light 0.6s ease-in-out;
+          }
+          
+          .card-hover-animation:hover {
+            animation: card-hover 0.3s ease-out forwards;
+          }
+          
+          /* Enhanced background color transitions */
+          .card-hover-animation {
+            position: relative;
+            overflow: hidden;
+          }
+          
+          .card-hover-animation::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: inherit;
+            border-radius: inherit;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
+          }
+          
+          .card-hover-animation:hover::before {
+            opacity: 1;
+          }
+          
+          /* Enhanced gradient animations */
+          @keyframes gradient-shift {
+            0%, 100% {
+              background-position: 0% 50%;
+            }
+            50% {
+              background-position: 100% 50%;
+            }
+          }
+          
+          .gradient-animation {
+            background-size: 200% 200%;
+            animation: gradient-shift 3s ease infinite;
+          }
+          
+          /* Enhanced pulse glow effect */
+          @keyframes pulse-glow {
+            0%, 100% {
+              box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+            }
+            50% {
+              box-shadow: 0 0 20px rgba(59, 130, 246, 0.6), 0 0 30px rgba(59, 130, 246, 0.4);
+            }
+          }
+          
+          .pulse-glow {
+            animation: pulse-glow 2s ease-in-out infinite;
+          }
+          
+          /* Color-specific hover effects */
+          .card-hover-animation:hover {
+            transform: translateY(-8px) scale(1.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+          
+          /* Improved shadow transitions */
+          .card-hover-animation {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+          
+          .card-hover-animation:hover {
+            box-shadow: 
+              0 20px 25px -5px rgba(0, 0, 0, 0.1), 
+              0 10px 10px -5px rgba(0, 0, 0, 0.04),
+              0 0 0 1px rgba(255, 255, 255, 0.05);
+          }
+          
+          /* Enhanced background overlay animation */
+          @keyframes background-pulse {
+            0% {
+              background-size: 100% 100%;
+              opacity: 0.8;
+            }
+            50% {
+              background-size: 110% 110%;
+              opacity: 1;
+            }
+            100% {
+              background-size: 100% 100%;
+              opacity: 0.8;
+            }
+          }
+          
+          .card-hover-animation:hover {
+            animation: background-pulse 2s ease-in-out infinite;
+          }
+        `
+      }} />
     </div>
   );
 };

@@ -6,19 +6,19 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
+import CleanDashboard from './pages/CleanDashboard';
+import Analytics from './pages/Analytics';
 import Clients from './pages/Clients';
 import ClientProfile from './pages/ClientProfile';
-import ClientsTest from './pages/ClientsTest';
 import Services from './pages/Services';
-import ServicesSafe from './pages/ServicesSafe';
-import ServicesTest from './pages/ServicesTest';
 import Quotations from './pages/Quotations';
-import QuotationsTest from './pages/QuotationsTest';
 import Invoices from './pages/Invoices';
-import InvoicesTest from './pages/InvoicesTest';
 import Users from './pages/Users';
-import UsersTest from './pages/UsersTest';
+import AdminDashboard from './pages/AdminDashboard';
+import FinancialActivities from './pages/FinancialActivities';
+import Settings from './pages/Settings';
+import Projects from './pages/Projects';
+import ProjectDetail from './pages/ProjectDetail';
 
 function AppRoutes() {
   const { isAuthenticated, loading } = useAuth();
@@ -42,7 +42,19 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Layout>
-              <Dashboard />
+              <CleanDashboard />
+            </Layout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/analytics" 
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ErrorBoundary>
+                <Analytics />
+              </ErrorBoundary>
             </Layout>
           </ProtectedRoute>
         } 
@@ -54,18 +66,6 @@ function AppRoutes() {
             <Layout>
               <ErrorBoundary>
                 <Clients />
-              </ErrorBoundary>
-            </Layout>
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/clients/:id" 
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <ErrorBoundary>
-                <ClientProfile />
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>
@@ -96,6 +96,30 @@ function AppRoutes() {
         } 
       />
       <Route 
+        path="/projects" 
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ErrorBoundary>
+                <Projects />
+              </ErrorBoundary>
+            </Layout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/projects/:id" 
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ErrorBoundary>
+                <ProjectDetail />
+              </ErrorBoundary>
+            </Layout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
         path="/quotations" 
         element={
           <ProtectedRoute>
@@ -120,12 +144,87 @@ function AppRoutes() {
         } 
       />
       <Route 
+        path="/projects" 
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ErrorBoundary>
+                <Projects />
+              </ErrorBoundary>
+            </Layout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/projects/:id" 
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ErrorBoundary>
+                <ProjectDetail />
+              </ErrorBoundary>
+            </Layout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/financial-activities" 
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ErrorBoundary>
+                <FinancialActivities />
+              </ErrorBoundary>
+            </Layout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
         path="/users" 
         element={
           <ProtectedRoute requiredRole="admin">
             <Layout>
               <ErrorBoundary>
                 <Users />
+              </ErrorBoundary>
+            </Layout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin" 
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <Layout>
+              <ErrorBoundary>
+                <AdminDashboard />
+              </ErrorBoundary>
+            </Layout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/reports" 
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ErrorBoundary>
+                <div className="p-6">
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Reports</h1>
+                  <p className="text-gray-600 dark:text-gray-400">Reports functionality coming soon...</p>
+                </div>
+              </ErrorBoundary>
+            </Layout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/settings" 
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ErrorBoundary>
+                <Settings />
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>

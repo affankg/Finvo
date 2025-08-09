@@ -35,24 +35,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      // Fetch user profile to verify token is still valid
-      fetchUserProfile();
-    } else {
-      setLoading(false);
-    }
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('access_token');
+      
+      if (token) {
+        // Set a timeout to prevent hanging
+        const timeoutId = setTimeout(() => {
+          console.warn('Auth initialization timeout, proceeding without verification');
+          setLoading(false);
+        }, 5000); // 5 second timeout
+        
+        try {
+          await fetchUserProfile();
+          clearTimeout(timeoutId);
+        } catch (error) {
+          clearTimeout(timeoutId);
+          console.error('Auth initialization failed:', error);
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
   }, []);
 
   const fetchUserProfile = async () => {
     try {
+      console.log('Fetching user profile...');
       const response = await authAPI.profile();
+      console.log('Profile fetched successfully:', response.data);
       setUser(response.data);
       setIsAuthenticated(true);
-    } catch (error) {
+    } catch (error: any) {
+      console.warn('Profile fetch failed:', error.message);
       // Token is invalid, remove it
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      setUser(null);
+      setIsAuthenticated(false);
     } finally {
       setLoading(false);
     }

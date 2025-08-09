@@ -2,6 +2,20 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model, authenticate
 from .models import Client, Service, Quotation, QuotationItem, Invoice, InvoiceItem, ActivityLog, NumberSequence, Interaction, ClientAttachment
 
+# Import financial serializers
+from .financial_serializers import (
+    FinancialAccountSerializer,
+    FinancialActivitySerializer,
+    FinancialActivityListSerializer,
+    FinancialAttachmentSerializer,
+    JournalEntrySerializer,
+    FinancialReportSerializer,
+    FinancialAuditLogSerializer,
+    BalanceSheetSerializer,
+    IncomeStatementSerializer,
+    DashboardInsightsSerializer,
+)
+
 User = get_user_model()
 
 class NumberSequenceSerializer(serializers.ModelSerializer):
@@ -152,6 +166,8 @@ class QuotationSerializer(serializers.ModelSerializer):
     formatted_total = serializers.SerializerMethodField()
     currency_symbol = serializers.SerializerMethodField()
     client_name = serializers.CharField(source='client.name', read_only=True)
+    project_name = serializers.CharField(source='project.name', read_only=True)
+    project_number = serializers.CharField(source='project.project_number', read_only=True)
     client_details = ClientSerializer(source='client', read_only=True)
     created_by_details = UserSerializer(source='created_by', read_only=True)
     currency_choices = serializers.SerializerMethodField()
@@ -159,9 +175,10 @@ class QuotationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Quotation
         fields = [
-            'id', 'number', 'client', 'client_name', 'client_details', 'date', 'validity', 'currency',
-            'currency_symbol', 'currency_choices', 'notes', 'created_at', 'updated_at',
-            'created_by_details', 'items', 'total_amount', 'subtotal_amount', 'total_tax_amount', 'formatted_total'
+            'id', 'number', 'client', 'client_name', 'client_details', 'project', 'project_name', 
+            'project_number', 'date', 'validity', 'status', 'currency', 'currency_symbol', 'currency_choices', 
+            'purchase_requisition', 'notes', 'created_at', 'updated_at', 'created_by_details', 'items', 'total_amount', 
+            'subtotal_amount', 'total_tax_amount', 'formatted_total'
         ]
         read_only_fields = ['id', 'number', 'created_at', 'updated_at', 'created_by_details']
 
@@ -226,6 +243,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
     formatted_total = serializers.SerializerMethodField()
     currency_symbol = serializers.SerializerMethodField()
     client_name = serializers.CharField(source='client.name', read_only=True)
+    project_name = serializers.CharField(source='project.name', read_only=True)
+    project_number = serializers.CharField(source='project.project_number', read_only=True)
     client_details = ClientSerializer(source='client', read_only=True)
     created_by_details = UserSerializer(source='created_by', read_only=True)
     quotation_details = QuotationSerializer(source='quotation', read_only=True)
@@ -234,12 +253,13 @@ class InvoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invoice
         fields = [
-            'id', 'number', 'client', 'client_name', 'client_details', 'quotation', 'quotation_details',
-            'date', 'due_date', 'status', 'currency', 'currency_symbol', 'currency_choices',
-            'notes', 'created_at', 'updated_at', 'created_by_details', 'items', 
-            'total_amount', 'subtotal_amount', 'total_tax_amount', 'formatted_total'
+            'id', 'number', 'po_number', 'client', 'client_name', 'client_details', 'project', 'project_name', 
+            'project_number', 'quotation', 'quotation_details', 'date', 'due_date', 'status', 
+            'currency', 'currency_symbol', 'currency_choices', 'notes', 'created_at', 'updated_at', 
+            'created_by', 'created_by_details', 'items', 'total_amount', 'subtotal_amount', 'total_tax_amount', 
+            'formatted_total'
         ]
-        read_only_fields = ['id', 'number', 'created_at', 'updated_at', 'created_by_details']
+        read_only_fields = ['id', 'number', 'created_at', 'updated_at', 'created_by', 'created_by_details']
 
     def get_total_amount(self, obj):
         return sum(item.total for item in obj.items.all())

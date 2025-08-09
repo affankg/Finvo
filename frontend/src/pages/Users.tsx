@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { usersAPI, User } from '../services/api';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
+import BulkDeleteToolbar from '../components/BulkDeleteToolbar';
+import BulkDeleteConfirmation from '../components/BulkDeleteConfirmation';
 
 const Users = () => {
   const { user: currentUser } = useAuth();
@@ -9,6 +11,9 @@ const Users = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -138,6 +143,51 @@ const Users = () => {
     }
   };
 
+  const handleSelectUser = (userId: number, isSelected: boolean) => {
+    if (isSelected) {
+      setSelectedUsers(prev => [...prev, userId]);
+    } else {
+      setSelectedUsers(prev => prev.filter(id => id !== userId));
+    }
+  };
+
+  const handleSelectAllUsers = (isSelected: boolean) => {
+    if (isSelected) {
+      // Filter out current user's ID to prevent self-deletion
+      const selectableUserIds = users.filter(user => user.id !== currentUser?.id).map(user => user.id);
+      setSelectedUsers(selectableUserIds);
+    } else {
+      setSelectedUsers([]);
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedUsers.some(id => id === currentUser?.id)) {
+      toast.error('Cannot delete your own account');
+      return;
+    }
+    setShowBulkDeleteConfirm(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    try {
+      setBulkDeleteLoading(true);
+      await usersAPI.bulkDelete(selectedUsers);
+      toast.success(`Successfully deleted ${selectedUsers.length} users`);
+      setSelectedUsers([]);
+      setShowBulkDeleteConfirm(false);
+      fetchUsers();
+    } catch (error) {
+      toast.error('Failed to delete selected users');
+    } finally {
+      setBulkDeleteLoading(false);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedUsers([]);
+  };
+
   const toggleUserStatus = async (user: User) => {
     if (user.id === currentUser?.id) {
       toast.error('You cannot deactivate your own account');
@@ -190,11 +240,28 @@ const Users = () => {
         </button>
       </div>
 
+      {/* Bulk Delete Toolbar */}
+      <BulkDeleteToolbar
+        selectedCount={selectedUsers.length}
+        onDeleteSelected={handleBulkDelete}
+        onClearSelection={clearSelection}
+        loading={bulkDeleteLoading}
+        entityType="users"
+      />
+
       {/* Users Table */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
         <table className="min-w-full">
           <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>
+              <th className="px-6 py-3">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  checked={users.filter(u => u.id !== currentUser?.id).length > 0 && selectedUsers.length === users.filter(u => u.id !== currentUser?.id).length}
+                  onChange={(e) => handleSelectAllUsers(e.target.checked)}
+                />
+              </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 User
               </th>
@@ -218,6 +285,15 @@ const Users = () => {
           <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
             {users.map((user) => (
               <tr key={user.id}>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    checked={selectedUsers.includes(user.id)}
+                    onChange={(e) => handleSelectUser(user.id, e.target.checked)}
+                    disabled={user.id === currentUser?.id}
+                  />
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10">
@@ -413,6 +489,16 @@ const Users = () => {
           </div>
         </div>
       )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      <BulkDeleteConfirmation
+        isOpen={showBulkDeleteConfirm}
+        onClose={() => setShowBulkDeleteConfirm(false)}
+        onConfirm={confirmBulkDelete}
+        selectedCount={selectedUsers.length}
+        entityType="users"
+        loading={bulkDeleteLoading}
+      />
     </div>
   );
 };

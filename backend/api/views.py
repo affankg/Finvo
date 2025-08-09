@@ -12,8 +12,9 @@ from django.conf import settings
 from django.db.models import Q, Sum, Count
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, datetime
 import os
+from collections import defaultdict
 
 from .models import Client, Service, Quotation, Invoice, ActivityLog, User, NumberSequence, Interaction, ClientAttachment
 from .serializers import (
@@ -249,6 +250,34 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated, RoleBasedPermission]
+    
+    @action(detail=False, methods=['post'])
+    def bulk_delete(self, request):
+        """Bulk delete users"""
+        ids = request.data.get('ids', [])
+        if not ids:
+            return Response({'error': 'No IDs provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Prevent self-deletion
+        if request.user.id in ids:
+            return Response({'error': 'Cannot delete your own account'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            deleted_count = User.objects.filter(id__in=ids).count()
+            User.objects.filter(id__in=ids).delete()
+            
+            # Log bulk deletion activity
+            ActivityLog.objects.create(
+                user=request.user,
+                action='bulk_delete',
+                content_type='user',
+                object_id=0,
+                description=f'Bulk deleted {deleted_count} users'
+            )
+            
+            return Response({'message': f'Successfully deleted {deleted_count} users'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ClientViewSet(viewsets.ModelViewSet):
     queryset = Client.objects.all().select_related('assigned_to').prefetch_related('interactions', 'attachments')
@@ -297,6 +326,30 @@ class ClientViewSet(viewsets.ModelViewSet):
         serializer = ClientAttachmentSerializer(attachments, many=True)
         return Response(serializer.data)
     
+    @action(detail=False, methods=['post'])
+    def bulk_delete(self, request):
+        """Bulk delete clients"""
+        ids = request.data.get('ids', [])
+        if not ids:
+            return Response({'error': 'No IDs provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            deleted_count = Client.objects.filter(id__in=ids).count()
+            Client.objects.filter(id__in=ids).delete()
+            
+            # Log bulk deletion activity
+            ActivityLog.objects.create(
+                user=request.user,
+                action='bulk_delete',
+                content_type='client',
+                object_id=0,  # No specific object ID for bulk operations
+                description=f'Bulk deleted {deleted_count} clients'
+            )
+            
+            return Response({'message': f'Successfully deleted {deleted_count} clients'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
     @action(detail=True, methods=['get'])
     def summary(self, request, pk=None):
         """Get client summary with statistics"""
@@ -329,6 +382,30 @@ class ServiceViewSet(viewsets.ModelViewSet):
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
     permission_classes = [permissions.IsAuthenticated, RoleBasedPermission]
+    
+    @action(detail=False, methods=['post'])
+    def bulk_delete(self, request):
+        """Bulk delete services"""
+        ids = request.data.get('ids', [])
+        if not ids:
+            return Response({'error': 'No IDs provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            deleted_count = Service.objects.filter(id__in=ids).count()
+            Service.objects.filter(id__in=ids).delete()
+            
+            # Log bulk deletion activity
+            ActivityLog.objects.create(
+                user=request.user,
+                action='bulk_delete',
+                content_type='service',
+                object_id=0,
+                description=f'Bulk deleted {deleted_count} services'
+            )
+            
+            return Response({'message': f'Successfully deleted {deleted_count} services'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class QuotationViewSet(viewsets.ModelViewSet):
     queryset = Quotation.objects.all()
@@ -406,8 +483,10 @@ class QuotationViewSet(viewsets.ModelViewSet):
         invoice = Invoice.objects.create(
             quotation=quotation,
             client=quotation.client,
+            project=quotation.project,  # Add project if it exists
             date=timezone.now().date(),
             due_date=timezone.now().date() + timedelta(days=30),
+            currency=quotation.currency,  # Add the missing currency field
             notes=quotation.notes,
             created_by=request.user
         )
@@ -420,9 +499,14 @@ class QuotationViewSet(viewsets.ModelViewSet):
                 service=qitem.service,
                 quantity=qitem.quantity,
                 price=qitem.price,
-                description=qitem.description
+                description=qitem.description,
+                tax_type=qitem.tax_type  # Copy tax type as well
             )
-        
+
+        # Update quotation status to converted
+        quotation.status = 'converted'
+        quotation.save()
+
         # Log activity
         ActivityLog.objects.create(
             user=request.user,
@@ -434,6 +518,51 @@ class QuotationViewSet(viewsets.ModelViewSet):
         
         return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
 
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        quotation = self.get_object()
+        
+        if quotation.status == 'approved':
+            return Response(
+                {'error': 'Quotation is already approved'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        quotation.status = 'approved'
+        quotation.approved_by = request.user
+        quotation.approved_at = timezone.now()
+        quotation.save()
+        
+        # Log activity
+        ActivityLog.objects.create(
+            user=request.user,
+            action='approve',
+            content_type='quotation',
+            object_id=quotation.id,
+            description=f'Approved quotation {quotation.number}'
+        )
+        
+        return Response({'message': 'Quotation approved successfully'})
+    
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        quotation = self.get_object()
+        reason = request.data.get('reason', '')
+        
+        quotation.status = 'rejected'
+        quotation.save()
+        
+        # Log activity
+        ActivityLog.objects.create(
+            user=request.user,
+            action='reject',
+            content_type='quotation',
+            object_id=quotation.id,
+            description=f'Rejected quotation {quotation.number}. Reason: {reason}'
+        )
+        
+        return Response({'message': 'Quotation rejected'})
+
     def _log_activity(self, action, instance):
         ActivityLog.objects.create(
             user=self.request.user,
@@ -442,6 +571,30 @@ class QuotationViewSet(viewsets.ModelViewSet):
             object_id=instance.id,
             description=f'{action.capitalize()} quotation {instance.number}'
         )
+    
+    @action(detail=False, methods=['post'])
+    def bulk_delete(self, request):
+        """Bulk delete quotations"""
+        ids = request.data.get('ids', [])
+        if not ids:
+            return Response({'error': 'No IDs provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            deleted_count = Quotation.objects.filter(id__in=ids).count()
+            Quotation.objects.filter(id__in=ids).delete()
+            
+            # Log bulk deletion activity
+            ActivityLog.objects.create(
+                user=request.user,
+                action='bulk_delete',
+                content_type='quotation',
+                object_id=0,
+                description=f'Bulk deleted {deleted_count} quotations'
+            )
+            
+            return Response({'message': f'Successfully deleted {deleted_count} quotations'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class InvoiceViewSet(viewsets.ModelViewSet):
     queryset = Invoice.objects.all()
@@ -511,6 +664,51 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         invoice.save()
         self._log_activity('update', invoice)
         return Response({'status': 'marked as paid'})
+    
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        invoice = self.get_object()
+        
+        if invoice.status == 'approved':
+            return Response(
+                {'error': 'Invoice is already approved'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        invoice.status = 'approved'
+        invoice.approved_by = request.user
+        invoice.approved_at = timezone.now()
+        invoice.save()
+        
+        # Log activity
+        ActivityLog.objects.create(
+            user=request.user,
+            action='approve',
+            content_type='invoice',
+            object_id=invoice.id,
+            description=f'Approved invoice {invoice.number}'
+        )
+        
+        return Response({'message': 'Invoice approved successfully'})
+    
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        invoice = self.get_object()
+        reason = request.data.get('reason', '')
+        
+        invoice.status = 'cancelled'
+        invoice.save()
+        
+        # Log activity
+        ActivityLog.objects.create(
+            user=request.user,
+            action='reject',
+            content_type='invoice',
+            object_id=invoice.id,
+            description=f'Rejected invoice {invoice.number}. Reason: {reason}'
+        )
+        
+        return Response({'message': 'Invoice rejected'})
 
     def _log_activity(self, action, instance):
         ActivityLog.objects.create(
@@ -520,6 +718,30 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             object_id=instance.id,
             description=f'{action.capitalize()} invoice {instance.number}'
         )
+    
+    @action(detail=False, methods=['post'])
+    def bulk_delete(self, request):
+        """Bulk delete invoices"""
+        ids = request.data.get('ids', [])
+        if not ids:
+            return Response({'error': 'No IDs provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            deleted_count = Invoice.objects.filter(id__in=ids).count()
+            Invoice.objects.filter(id__in=ids).delete()
+            
+            # Log bulk deletion activity
+            ActivityLog.objects.create(
+                user=request.user,
+                action='bulk_delete',
+                content_type='invoice',
+                object_id=0,
+                description=f'Bulk deleted {deleted_count} invoices'
+            )
+            
+            return Response({'message': f'Successfully deleted {deleted_count} invoices'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ActivityLogViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ActivityLog.objects.all()
@@ -632,4 +854,192 @@ class ClientAttachmentViewSet(viewsets.ModelViewSet):
             content_type='attachment',
             object_id=serializer.instance.id,
             description=f'Uploaded attachment: {serializer.instance.name} for {serializer.instance.client.name}'
+        )
+
+# Financial Chart APIs
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def financial_charts_data(request):
+    """
+    Get comprehensive financial chart data for dashboard
+    """
+    # Date filtering
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    client_filter = request.GET.get('client')
+    status_filter = request.GET.get('status')
+    
+    # Default to last 12 months if no date filter
+    if not date_from:
+        date_from = timezone.now().date() - timedelta(days=365)
+    else:
+        date_from = datetime.strptime(date_from, '%Y-%m-%d').date()
+    
+    if not date_to:
+        date_to = timezone.now().date()
+    else:
+        date_to = datetime.strptime(date_to, '%Y-%m-%d').date()
+    
+    # Apply filters
+    invoice_queryset = Invoice.objects.filter(date__gte=date_from, date__lte=date_to)
+    if client_filter:
+        invoice_queryset = invoice_queryset.filter(client_id=client_filter)
+    if status_filter:
+        invoice_queryset = invoice_queryset.filter(status=status_filter)
+    
+    # 1. Invoice vs Payments Data (Monthly)
+    invoice_payment_data = []
+    current_date = date_from.replace(day=1)
+    
+    while current_date <= date_to:
+        month_invoices = invoice_queryset.filter(
+            date__year=current_date.year,
+            date__month=current_date.month
+        )
+        
+        # Calculate total invoice amounts for the month
+        total_invoices = sum(invoice.total_amount for invoice in month_invoices)
+        
+        # Calculate payments received (assuming paid invoices represent payments)
+        total_payments = sum(
+            invoice.total_amount for invoice in month_invoices.filter(status='paid')
+        )
+        
+        invoice_payment_data.append({
+            'month': current_date.strftime('%b %Y'),
+            'invoices': float(total_invoices),
+            'payments': float(total_payments)
+        })
+        
+        # Move to next month
+        if current_date.month == 12:
+            current_date = current_date.replace(year=current_date.year + 1, month=1)
+        else:
+            current_date = current_date.replace(month=current_date.month + 1)
+    
+    # 2. Outstanding Receivables per Client
+    client_receivables = defaultdict(float)
+    outstanding_invoices = invoice_queryset.exclude(status='paid')
+    
+    for invoice in outstanding_invoices:
+        client_receivables[invoice.client.name] += float(invoice.total_amount)
+    
+    client_receivables_data = [
+        {'client': client, 'amount': amount}
+        for client, amount in client_receivables.items()
+    ]
+    
+    # 3. Invoice Status Overview
+    status_counts = invoice_queryset.values('status').annotate(
+        count=Count('id')
+    )
+    
+    invoice_status_data = []
+    for status_data in status_counts:
+        # Calculate total amount for this status
+        status_invoices = invoice_queryset.filter(status=status_data['status'])
+        total_amount = 0
+        for invoice in status_invoices:
+            total_amount += invoice.total_amount
+            
+        invoice_status_data.append({
+            'status': status_data['status'].title(),
+            'count': status_data['count'],
+            'amount': float(total_amount)
+        })
+    
+    # 4. Receivables Aging Report
+    today = timezone.now().date()
+    aging_data = defaultdict(lambda: {
+        'days_0_30': 0,
+        'days_31_60': 0,
+        'days_61_90': 0,
+        'days_90_plus': 0
+    })
+    
+    for invoice in outstanding_invoices:
+        days_outstanding = (today - invoice.due_date).days
+        client_name = invoice.client.name
+        amount = float(invoice.total_amount)
+        
+        if days_outstanding <= 30:
+            aging_data[client_name]['days_0_30'] += amount
+        elif days_outstanding <= 60:
+            aging_data[client_name]['days_31_60'] += amount
+        elif days_outstanding <= 90:
+            aging_data[client_name]['days_61_90'] += amount
+        else:
+            aging_data[client_name]['days_90_plus'] += amount
+    
+    receivables_aging_data = [
+        {
+            'client': client,
+            **amounts
+        }
+        for client, amounts in aging_data.items()
+    ]
+    
+    return Response({
+        'invoice_payments': invoice_payment_data,
+        'client_receivables': client_receivables_data,
+        'invoice_status': invoice_status_data,
+        'receivables_aging': receivables_aging_data,
+        'filters_applied': {
+            'date_from': date_from.isoformat(),
+            'date_to': date_to.isoformat(),
+            'client': client_filter,
+            'status': status_filter
+        }
+    })
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def financial_summary(request):
+    """
+    Get financial summary metrics for dashboard
+    """
+    # Calculate key financial metrics using Python properties
+    unpaid_invoices = Invoice.objects.exclude(status='paid')
+    total_receivables = sum(invoice.total_amount for invoice in unpaid_invoices)
+    
+    overdue_invoices = Invoice.objects.filter(status='overdue')
+    overdue_amount = sum(invoice.total_amount for invoice in overdue_invoices)
+    
+    paid_this_month = Invoice.objects.filter(
+        date__month=timezone.now().month,
+        date__year=timezone.now().year,
+        status='paid'
+    )
+    this_month_revenue = sum(invoice.total_amount for invoice in paid_this_month)
+    
+    return Response({
+        'total_receivables': float(total_receivables),
+        'overdue_amount': float(overdue_amount),
+        'this_month_revenue': float(this_month_revenue),
+        'invoice_count': Invoice.objects.count(),
+        'paid_invoice_count': Invoice.objects.filter(status='paid').count(),
+        'overdue_invoice_count': Invoice.objects.filter(status='overdue').count()
+    })
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def approved_quotations_view(request):
+    """Get all approved quotations that haven't been converted to invoices yet"""
+    try:
+        # Get approved quotations that don't have an associated invoice
+        approved_quotations = Quotation.objects.filter(
+            status='approved'
+        ).exclude(
+            invoice__isnull=False  # Exclude quotations that already have invoices
+        ).select_related('client', 'approved_by')
+        
+        serializer = QuotationSerializer(approved_quotations, many=True)
+        return Response({
+            'results': serializer.data,
+            'count': approved_quotations.count()
+        })
+    except Exception as e:
+        return Response(
+            {'error': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

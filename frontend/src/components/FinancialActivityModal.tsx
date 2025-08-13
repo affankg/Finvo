@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import axios from 'axios';
+import { clientsAPI, financialAPI, quotationsAPI, invoicesAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 // Icon components
@@ -142,20 +142,17 @@ const FinancialActivityModal: React.FC<FinancialActivityModalProps> = ({
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const headers = { Authorization: `Bearer ${token}` };
-
       const [clientsRes, accountsRes, quotationsRes, invoicesRes] = await Promise.all([
-        axios.get('http://192.168.100.113:8000/api/clients/', { headers }),
-        axios.get('http://192.168.100.113:8000/api/financial-accounts/', { headers }),
-        axios.get('http://192.168.100.113:8000/api/quotations/', { headers }),
-        axios.get('http://192.168.100.113:8000/api/invoices/', { headers }),
+        clientsAPI.getAll(),
+        financialAPI.getAccounts(),
+        quotationsAPI.getAll(),
+        invoicesAPI.getAll(),
       ]);
 
       setClients(clientsRes.data.results || clientsRes.data);
       setAccounts(accountsRes.data.results || accountsRes.data);
-      setQuotations(quotationsRes.data.results || quotationsRes.data);
-      setInvoices(invoicesRes.data.results || invoicesRes.data);
+      setQuotations((quotationsRes.data.results || quotationsRes.data) as any);
+      setInvoices((invoicesRes.data.results || invoicesRes.data) as any);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Failed to load form data');
@@ -173,8 +170,6 @@ const FinancialActivityModal: React.FC<FinancialActivityModalProps> = ({
 
     try {
       setLoading(true);
-      const token = localStorage.getItem('access_token');
-      const headers = { Authorization: `Bearer ${token}` };
 
       const submitData = {
         ...formData,
@@ -185,10 +180,10 @@ const FinancialActivityModal: React.FC<FinancialActivityModalProps> = ({
       };
 
       if (editActivity) {
-        await axios.patch(`http://192.168.100.113:8000/api/financial-activities/${editActivity.id}/`, submitData, { headers });
+        await financialAPI.updateActivity(editActivity.id, submitData);
         toast.success('Financial activity updated successfully');
       } else {
-        await axios.post('http://192.168.100.113:8000/api/financial-activities/', submitData, { headers });
+        await financialAPI.createActivity(submitData);
         toast.success('Financial activity created successfully');
       }
 

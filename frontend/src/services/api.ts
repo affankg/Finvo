@@ -1,7 +1,8 @@
 import axios from 'axios';
+import config from '../config/config';
 
-// API Base URL - Updated to match Django backend port
-const API_BASE_URL = 'http://192.168.100.113:8000/api';
+// API Base URL - Use config for centralized URL management
+const API_BASE_URL = config.API_BASE_URL;
 
 // Create axios instance with base URL and optimized settings
 export const api = axios.create({

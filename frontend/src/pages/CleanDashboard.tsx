@@ -211,6 +211,13 @@ const CleanDashboard: React.FC = () => {
       description: 'Generate invoice'
     },
     {
+      label: 'Create Project',
+      icon: <Icons.Project />,
+      action: () => window.location.href = '/projects',
+      color: 'bg-purple-500 hover:bg-purple-600',
+      description: 'Start new project'
+    },
+    {
       label: 'Add Expense',
       icon: <Icons.Money />,
       action: () => window.location.href = '/financial-activities',
@@ -357,6 +364,7 @@ const CleanDashboard: React.FC = () => {
                     card-hover-animation
                     ${action.label === 'New Quotation' ? 'bg-gradient-to-br from-green-50/80 via-green-100/60 to-green-200/40 border-green-200/60 dark:from-green-900/30 dark:via-green-800/20 dark:to-green-700/10 dark:border-green-700/50 text-green-700 dark:text-green-300 hover:from-green-500/30 hover:via-green-600/25 hover:to-green-700/20 hover:shadow-green-500/30 hover:border-green-300/80 dark:hover:from-green-500/40 dark:hover:via-green-600/30 dark:hover:to-green-700/20' : 
                       action.label === 'New Invoice' ? 'bg-gradient-to-br from-green-50/80 via-green-100/60 to-green-200/40 border-green-200/60 dark:from-green-900/30 dark:via-green-800/20 dark:to-green-700/10 dark:border-green-700/50 text-green-700 dark:text-green-300 hover:from-green-500/30 hover:via-green-600/25 hover:to-green-700/20 hover:shadow-green-500/30 hover:border-green-300/80 dark:hover:from-green-500/40 dark:hover:via-green-600/30 dark:hover:to-green-700/20' :
+                      action.label === 'Create Project' ? 'bg-gradient-to-br from-teal-50/80 via-teal-100/60 to-teal-200/40 border-teal-200/60 dark:from-teal-900/30 dark:via-teal-800/20 dark:to-teal-700/10 dark:border-teal-700/50 text-teal-700 dark:text-teal-300 hover:from-teal-500/30 hover:via-teal-600/25 hover:to-teal-700/20 hover:shadow-teal-500/30 hover:border-teal-300/80 dark:hover:from-teal-500/40 dark:hover:via-teal-600/30 dark:hover:to-teal-700/20' :
                       action.label === 'Add Expense' ? 'bg-gradient-to-br from-purple-50/80 via-purple-100/60 to-purple-200/40 border-purple-200/60 dark:from-purple-900/30 dark:via-purple-800/20 dark:to-purple-700/10 dark:border-purple-700/50 text-purple-700 dark:text-purple-300 hover:from-purple-500/30 hover:via-purple-600/25 hover:to-purple-700/20 hover:shadow-purple-500/30 hover:border-purple-300/80 dark:hover:from-purple-500/40 dark:hover:via-purple-600/30 dark:hover:to-purple-700/20' :
                       action.label === 'Add Client' ? 'bg-gradient-to-br from-indigo-50/80 via-indigo-100/60 to-indigo-200/40 border-indigo-200/60 dark:from-indigo-900/30 dark:via-indigo-800/20 dark:to-indigo-700/10 dark:border-indigo-700/50 text-indigo-700 dark:text-indigo-300 hover:from-indigo-500/30 hover:via-indigo-600/25 hover:to-indigo-700/20 hover:shadow-indigo-500/30 hover:border-indigo-300/80 dark:hover:from-indigo-500/40 dark:hover:via-indigo-600/30 dark:hover:to-indigo-700/20' :
                       action.label === 'View Analytics' ? 'bg-gradient-to-br from-orange-50/80 via-orange-100/60 to-orange-200/40 border-orange-200/60 dark:from-orange-900/30 dark:via-orange-800/20 dark:to-orange-700/10 dark:border-orange-700/50 text-orange-700 dark:text-orange-300 hover:from-orange-500/30 hover:via-orange-600/25 hover:to-orange-700/20 hover:shadow-orange-500/30 hover:border-orange-300/80 dark:hover:from-orange-500/40 dark:hover:via-orange-600/30 dark:hover:to-orange-700/20' :
@@ -385,6 +393,7 @@ const CleanDashboard: React.FC = () => {
                     transition-all duration-500 ease-out blur-xl
                     ${action.label === 'New Quotation' ? 'bg-green-500/20' :
                       action.label === 'New Invoice' ? 'bg-green-500/20' :
+                      action.label === 'Create Project' ? 'bg-teal-500/20' :
                       action.label === 'Add Expense' ? 'bg-purple-500/20' :
                       action.label === 'Add Client' ? 'bg-indigo-500/20' :
                       action.label === 'View Analytics' ? 'bg-orange-500/20' :
@@ -395,6 +404,7 @@ const CleanDashboard: React.FC = () => {
                   <div className={`transform transition-transform duration-300 group-hover:scale-110 group-hover:animate-bounce-light ${
                     action.label === 'New Quotation' ? 'text-green-600 dark:text-green-400' :
                     action.label === 'New Invoice' ? 'text-green-600 dark:text-green-400' :
+                    action.label === 'Create Project' ? 'text-teal-600 dark:text-teal-400' :
                     action.label === 'Add Expense' ? 'text-purple-600 dark:text-purple-400' :
                     action.label === 'Add Client' ? 'text-indigo-600 dark:text-indigo-400' :
                     action.label === 'View Analytics' ? 'text-yellow-600 dark:text-yellow-400' :

@@ -135,7 +135,7 @@ class ProjectService {
   }
 
   async createProjectFromQuotation(quotationId: number): Promise<Project> {
-    const response = await api.post('/projects/from-quotation/', { quotation_id: quotationId });
+    const response = await api.post('/projects/from_quotation/', { quotation_id: quotationId });
     return response.data;
   }
 }

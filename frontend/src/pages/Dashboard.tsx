@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { dashboardAPI, DashboardStats, ActivityLog } from '../services/api';
+import { dashboardAPI, projectsAPI, DashboardStats, ActivityLog } from '../services/api';
 import { StatCard, QuickActionButton, StatusBadge } from '../components/DashboardComponents';
 import { BarChart, PieChart } from '../components/Charts';
 import { toast } from 'react-hot-toast';
@@ -53,10 +53,45 @@ interface EnhancedDashboardStats extends DashboardStats {
   total_amount?: number; // Add this property
 }
 
+// Project dashboard interfaces
+interface ProjectDashboardData {
+  id: number;
+  name: string;
+  project_number: string;
+  client_name: string;
+  project_manager_name: string;
+  status: string;
+  priority: string;
+  start_date: string;
+  end_date: string;
+  currency: string;
+  total_budget: number;
+  total_spent: number;
+  total_billed: number;
+  remaining_budget: number;
+  profit_margin: number;
+  progress_percentage: number;
+  milestones_completed: number;
+  milestones_total: number;
+  days_remaining: number;
+  is_overdue: boolean;
+  team_size: number;
+}
+
+interface ProjectInsights {
+  active_projects: ProjectDashboardData[];
+  total_active: number;
+  total_overdue: number;
+  total_budget_all: number;
+  total_spent_all: number;
+  avg_completion: number;
+}
+
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState<EnhancedDashboardStats | null>(null);
   const [recentActivities, setRecentActivities] = useState<ActivityLog[]>([]);
+  const [projectInsights, setProjectInsights] = useState<ProjectInsights | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTimeFilter, setActiveTimeFilter] = useState('month');
 
@@ -67,19 +102,22 @@ const Dashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await dashboardAPI.getStats();
+      const [dashboardResponse, projectsResponse] = await Promise.all([
+        dashboardAPI.getStats(),
+        projectsAPI.getDashboard()
+      ]);
       
       // Enhance the stats with calculated insights
       const enhancedStats: EnhancedDashboardStats = {
-        ...response.data.stats,
+        ...dashboardResponse.data.stats,
         monthly_quotations_trend: 12.5,
         monthly_invoices_trend: 8.3,
         revenue_trend: 15.2,
         profit_margin: 24.5,
-        total_revenue: (response.data.stats as any).total_amount || 450000,
-        total_amount: (response.data.stats as any).total_amount || 450000,
-        pending_quotations: Math.floor((response.data.stats.total_quotations || 0) * 0.3),
-        overdue_invoices: Math.floor((response.data.stats.total_invoices || 0) * 0.1),
+        total_revenue: (dashboardResponse.data.stats as any).total_amount || 450000,
+        total_amount: (dashboardResponse.data.stats as any).total_amount || 450000,
+        pending_quotations: Math.floor((dashboardResponse.data.stats.total_quotations || 0) * 0.3),
+        overdue_invoices: Math.floor((dashboardResponse.data.stats.total_invoices || 0) * 0.1),
         top_clients: [
           { name: 'Acme Corp', total: 125000 },
           { name: 'Tech Solutions', total: 98000 },
@@ -101,9 +139,25 @@ const Dashboard: React.FC = () => {
           { month: 'Jun', income: 225000, expenses: 168000 }
         ]
       };
+
+      // Process project insights
+      const projects = projectsResponse.data || [];
+      const activeProjects = projects.filter((p: ProjectDashboardData) => 
+        p.status === 'active' || p.status === 'in_progress'
+      );
+      
+      setProjectInsights({
+        active_projects: activeProjects.slice(0, 5), // Show top 5 active projects
+        total_active: activeProjects.length,
+        total_overdue: projects.filter((p: ProjectDashboardData) => p.is_overdue).length,
+        total_budget_all: projects.reduce((sum: number, p: ProjectDashboardData) => sum + p.total_budget, 0),
+        total_spent_all: projects.reduce((sum: number, p: ProjectDashboardData) => sum + p.total_spent, 0),
+        avg_completion: projects.length > 0 ? 
+          projects.reduce((sum: number, p: ProjectDashboardData) => sum + p.progress_percentage, 0) / projects.length : 0
+      });
       
       setStats(enhancedStats);
-      setRecentActivities(response.data.recent_activities || []);
+      setRecentActivities(dashboardResponse.data.recent_activities || []);
     } catch (error) {
       toast.error('Failed to load dashboard data');
     } finally {
@@ -132,16 +186,22 @@ const Dashboard: React.FC = () => {
       color: 'green' as const
     },
     {
+      label: 'Create Project',
+      icon: <Icons.Building />,
+      action: () => window.location.href = '/projects',
+      color: 'purple' as const
+    },
+    {
       label: 'Track Expenses',
       icon: <Icons.Money />,
       action: () => window.location.href = '/financial-activities',
-      color: 'purple' as const
+      color: 'indigo' as const
     },
     {
       label: 'Export Reports',
       icon: <Icons.Download />,
       action: () => toast.success('Advanced reporting coming soon!'),
-      color: 'indigo' as const
+      color: 'blue' as const
     }
   ];
 
@@ -209,7 +269,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-6">
           {quickActions.map((action, index) => (
             <div
               key={index}
@@ -316,6 +376,172 @@ const Dashboard: React.FC = () => {
           color="indigo"
         />
       </div>
+
+      {/* Project Insights Section */}
+      {projectInsights && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
+              <span className="text-2xl mr-3">🚀</span>
+              Project Management Insights
+            </h2>
+            <Link 
+              to="/projects" 
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium"
+            >
+              View All Projects →
+            </Link>
+          </div>
+
+          {/* Project Summary Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+            <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-4 border border-blue-200 dark:border-blue-700/50">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {projectInsights.total_active}
+                </div>
+                <div className="text-xs text-blue-700 dark:text-blue-300 mt-1">Active Projects</div>
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-xl p-4 border border-red-200 dark:border-red-700/50">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                  {projectInsights.total_overdue}
+                </div>
+                <div className="text-xs text-red-700 dark:text-red-300 mt-1">Overdue</div>
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl p-4 border border-green-200 dark:border-green-700/50">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {formatCurrency(projectInsights.total_budget_all, DEFAULT_CURRENCY)}
+                </div>
+                <div className="text-xs text-green-700 dark:text-green-300 mt-1">Total Budget</div>
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-xl p-4 border border-yellow-200 dark:border-yellow-700/50">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                  {formatCurrency(projectInsights.total_spent_all, DEFAULT_CURRENCY)}
+                </div>
+                <div className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">Total Spent</div>
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-4 border border-purple-200 dark:border-purple-700/50">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                  {Math.round(projectInsights.avg_completion)}%
+                </div>
+                <div className="text-xs text-purple-700 dark:text-purple-300 mt-1">Avg Progress</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Active Projects List */}
+          {projectInsights.active_projects.length > 0 && (
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Daily Project Updates
+              </h3>
+              <div className="space-y-4">
+                {projectInsights.active_projects.map((project) => (
+                  <div key={project.id} className="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {project.name}
+                        </h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {project.client_name} • PM: {project.project_manager_name}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          project.priority === 'high' || project.priority === 'critical' 
+                            ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                            : project.priority === 'medium'
+                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+                            : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                        }`}>
+                          {project.priority}
+                        </span>
+                        {project.is_overdue && (
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+                            Overdue
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                      <div className="text-center">
+                        <div className="font-medium text-gray-900 dark:text-white">
+                          {Math.round(project.progress_percentage)}%
+                        </div>
+                        <div className="text-gray-500 dark:text-gray-400">Progress</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-medium text-gray-900 dark:text-white">
+                          {formatCurrency(project.remaining_budget, project.currency)}
+                        </div>
+                        <div className="text-gray-500 dark:text-gray-400">Budget Left</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-medium text-gray-900 dark:text-white">
+                          {project.team_size}
+                        </div>
+                        <div className="text-gray-500 dark:text-gray-400">Team Size</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-medium text-gray-900 dark:text-white">
+                          {project.days_remaining}d
+                        </div>
+                        <div className="text-gray-500 dark:text-gray-400">Remaining</div>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="mt-3">
+                      <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full ${
+                            project.progress_percentage >= 80 
+                              ? 'bg-green-500' 
+                              : project.progress_percentage >= 60 
+                              ? 'bg-blue-500' 
+                              : project.progress_percentage >= 40 
+                              ? 'bg-yellow-500' 
+                              : 'bg-red-500'
+                          }`}
+                          style={{ width: `${Math.min(100, project.progress_percentage)}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Quick Project Actions */}
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => window.location.href = '/projects'}
+                    className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50 rounded-md transition-colors"
+                  >
+                    View All Projects
+                  </button>
+                  <button
+                    onClick={() => window.location.href = '/financial-activities'}
+                    className="px-3 py-1 text-xs font-medium text-green-600 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-300 dark:hover:bg-green-900/50 rounded-md transition-colors"
+                  >
+                    Project Expenses
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Charts and Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">

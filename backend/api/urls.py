@@ -15,7 +15,8 @@ from .financial_views import (
 )
 from .project_views import (
     ProjectViewSet, ProjectAssignmentViewSet, ProjectAttachmentViewSet,
-    ProjectMilestoneViewSet, ProjectNoteViewSet, ProjectAnalyticsViewSet
+    ProjectMilestoneViewSet, ProjectNoteViewSet, ProjectAnalyticsViewSet,
+    ProjectExpenseCategoryViewSet, ProjectExpenseViewSet
 )
 
 router = DefaultRouter()
@@ -42,6 +43,8 @@ router.register(r'project-attachments', ProjectAttachmentViewSet)
 router.register(r'project-milestones', ProjectMilestoneViewSet)
 router.register(r'project-notes', ProjectNoteViewSet)
 router.register(r'project-analytics', ProjectAnalyticsViewSet, basename='project-analytics')
+router.register(r'project-expense-categories', ProjectExpenseCategoryViewSet, basename='project-expense-categories')
+router.register(r'project-expenses', ProjectExpenseViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

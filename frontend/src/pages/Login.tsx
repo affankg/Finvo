@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
@@ -13,8 +13,26 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  // Optimize input handlers with useCallback to prevent unnecessary re-renders
+  const handleUsernameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setUsername(e.target.value);
+  }, []);
+
+  const handlePasswordChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+  }, []);
+
+  const togglePasswordVisibility = useCallback(() => {
+    setShowPassword(prev => !prev);
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!username.trim() || !password.trim()) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
@@ -28,492 +46,388 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-950 via-slate-900 to-gray-900 relative overflow-hidden px-6">
-      {/* Enhanced Dark Background */}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-black via-gray-950 to-black relative overflow-hidden">
+      {/* Enhanced Aesthetic Background with Moving Animations */}
       <div className="absolute inset-0">
-        {/* Subtle Pattern Overlay */}
+        {/* Dynamic Gradient Mesh */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/8 via-indigo-900/6 to-purple-900/8"></div>
+        
+        {/* Enhanced Animated Floating Orbs with Stronger Glow */}
         <div 
-          className="absolute inset-0 opacity-10" 
-          style={{
-            backgroundImage: `radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.05) 1px, transparent 1px)`,
-            backgroundSize: '24px 24px'
+          className="absolute top-20 left-20 w-80 h-80 bg-blue-500/12 rounded-full blur-3xl animate-pulse" 
+          style={{ 
+            animationDuration: '4s',
+            animation: 'float 8s ease-in-out infinite, glowPulse 4s ease-in-out infinite',
+            boxShadow: '0 0 60px rgba(59, 130, 246, 0.2), 0 0 120px rgba(59, 130, 246, 0.1)'
+          }}
+        ></div>
+        <div 
+          className="absolute bottom-20 right-20 w-96 h-96 bg-indigo-500/8 rounded-full blur-3xl" 
+          style={{ 
+            animationDelay: '2s',
+            animation: 'floatReverse 10s ease-in-out infinite 2s, glowPulse 5s ease-in-out infinite 2s',
+            boxShadow: '0 0 70px rgba(99, 102, 241, 0.18), 0 0 140px rgba(99, 102, 241, 0.09)'
+          }}
+        ></div>
+        <div 
+          className="absolute top-1/2 left-10 w-72 h-72 bg-purple-500/8 rounded-full blur-3xl" 
+          style={{ 
+            animationDelay: '3s',
+            animation: 'floatSlow 12s ease-in-out infinite 3s, glowPulse 6s ease-in-out infinite 3s',
+            boxShadow: '0 0 50px rgba(147, 51, 234, 0.15), 0 0 100px rgba(147, 51, 234, 0.08)'
           }}
         ></div>
         
-        {/* Additional glowing orbs for ambient lighting */}
-        <div className="absolute top-20 left-20 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse orb-float"></div>
-        <div className="absolute bottom-20 right-20 w-80 h-80 bg-purple-500/8 rounded-full blur-3xl animate-pulse orb-float" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute top-40 right-40 w-60 h-60 bg-green-500/6 rounded-full blur-3xl animate-pulse orb-float" style={{ animationDelay: '4s' }}></div>
-        <div className="absolute bottom-40 left-40 w-72 h-72 bg-yellow-500/8 rounded-full blur-3xl animate-pulse orb-float" style={{ animationDelay: '6s' }}></div>
+        {/* Additional Bright Accent Orbs */}
+        <div 
+          className="absolute top-1/3 right-1/3 w-48 h-48 bg-cyan-400/6 rounded-full blur-2xl" 
+          style={{ 
+            animationDelay: '1s',
+            animation: 'floatGentle 14s ease-in-out infinite 1s, glowPulse 7s ease-in-out infinite 1s',
+            boxShadow: '0 0 40px rgba(34, 211, 238, 0.15)'
+          }}
+        ></div>
+        <div 
+          className="absolute bottom-1/3 left-1/2 w-56 h-56 bg-violet-500/5 rounded-full blur-2xl" 
+          style={{ 
+            animationDelay: '4s',
+            animation: 'floatReverse 16s ease-in-out infinite 4s, glowPulse 8s ease-in-out infinite 4s',
+            boxShadow: '0 0 45px rgba(139, 92, 246, 0.13)'
+          }}
+        ></div>
         
-        {/* World Map Background - Enhanced Visibility */}
-        <div className="absolute inset-0 opacity-35 sm:opacity-45 lg:opacity-55">
-          <svg
-            className="w-full h-full object-cover"
-            viewBox="0 0 1920 1080"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <defs>
-              <linearGradient id="lineGradient1" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#374151" stopOpacity="0.6"/>
-                <stop offset="50%" stopColor="#6B7280" stopOpacity="1"/>
-                <stop offset="100%" stopColor="#374151" stopOpacity="0.6"/>
-              </linearGradient>
-              <linearGradient id="mapGradient1" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#1F2937" stopOpacity="0.8"/>
-                <stop offset="50%" stopColor="#4B5563" stopOpacity="1"/>
-                <stop offset="100%" stopColor="#1F2937" stopOpacity="0.8"/>
-              </linearGradient>
-              <linearGradient id="blueGradient1" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#1E40AF" stopOpacity="0.6"/>
-                <stop offset="50%" stopColor="#3B82F6" stopOpacity="1"/>
-                <stop offset="100%" stopColor="#1E40AF" stopOpacity="0.6"/>
-              </linearGradient>
-            </defs>
-            
-            {/* Enhanced Map paths with better visibility */}
-            <path
-              d="M50 400L500 300L700 350L900 300L1100 400L1300 350L1500 400L1850 380"
-              stroke="url(#mapGradient1)"
-              strokeWidth="4"
-              fill="none"
-              opacity="0.8"
-              className="drop-shadow-lg"
-            />
-            <path
-              d="M20 500L400 450L600 500L800 450L1000 500L1200 450L1400 500L1600 450L1880 480"
-              stroke="url(#blueGradient1)"
-              strokeWidth="5"
-              fill="none"
-              opacity="0.9"
-              className="drop-shadow-lg"
-            />
-            <path
-              d="M0 300L350 250L550 300L750 250L950 300L1150 250L1350 300L1550 250L1920 280"
-              stroke="#1E3A8A"
-              strokeWidth="3.5"
-              fill="none"
-              opacity="0.7"
-              className="animate-pulse"
-            />
-            <path
-              d="M30 600L300 550L500 600L700 550L900 600L1100 550L1300 600L1500 550L1700 600L1890 580"
-              stroke="#1F2937"
-              strokeWidth="3.5"
-              fill="none"
-              opacity="0.6"
-              className="animate-pulse"
-              style={{ animationDelay: '1s' }}
-            />
-            <path
-              d="M0 700L450 650L650 700L850 650L1050 700L1250 650L1450 700L1920 680"
-              stroke="#374151"
-              strokeWidth="3"
-              fill="none"
-              opacity="0.5"
-              className="animate-pulse"
-              style={{ animationDelay: '2s' }}
-            />
-            
-            {/* Enhanced City lights with glow effect */}
-            <circle cx="300" cy="400" r="3" fill="#3B82F6" opacity="0.9" className="animate-pulse drop-shadow-lg" />
-            <circle cx="500" cy="300" r="2.5" fill="#60A5FA" opacity="0.7" className="animate-pulse drop-shadow-lg" />
-            <circle cx="700" cy="350" r="3" fill="#1E40AF" opacity="0.9" className="animate-pulse drop-shadow-lg" />
-            <circle cx="900" cy="300" r="2.5" fill="#3B82F6" opacity="0.7" className="animate-pulse drop-shadow-lg" />
-            <circle cx="1100" cy="400" r="3" fill="#60A5FA" opacity="0.9" className="animate-pulse drop-shadow-lg" />
-            <circle cx="1300" cy="350" r="2.5" fill="#1E3A8A" opacity="0.8" className="animate-pulse drop-shadow-lg" />
-            <circle cx="400" cy="450" r="2" fill="#4B5563" opacity="0.7" className="animate-pulse drop-shadow-lg" />
-            <circle cx="600" cy="500" r="2.5" fill="#6B7280" opacity="0.6" className="animate-pulse drop-shadow-lg" />
-            <circle cx="800" cy="450" r="2" fill="#374151" opacity="0.8" className="animate-pulse drop-shadow-lg" />
-            
-            {/* Additional connection nodes */}
-            <circle cx="200" cy="500" r="1.5" fill="#1E40AF" opacity="0.6" className="animate-pulse" />
-            <circle cx="1000" cy="500" r="1.5" fill="#3B82F6" opacity="0.6" className="animate-pulse" />
-            <circle cx="1400" cy="500" r="1.5" fill="#60A5FA" opacity="0.6" className="animate-pulse" />
-          </svg>
-        </div>
-
-        {/* Enhanced Animated Connection Lines */}
+        {/* Enhanced Moving Glowing Particles */}
         <div className="absolute inset-0">
-          <svg className="w-full h-full" viewBox="0 0 1920 1080">
-            <defs>
-              <linearGradient id="animatedGradient1" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#1E3A8A" stopOpacity="0" />
-                <stop offset="50%" stopColor="#3B82F6" stopOpacity="0.9" />
-                <stop offset="100%" stopColor="#1E3A8A" stopOpacity="0" />
-              </linearGradient>
-              <linearGradient id="animatedGradient2" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#1F2937" stopOpacity="0" />
-                <stop offset="50%" stopColor="#4B5563" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#1F2937" stopOpacity="0" />
-              </linearGradient>
-              <linearGradient id="animatedGradient3" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#374151" stopOpacity="0" />
-                <stop offset="50%" stopColor="#6B7280" stopOpacity="0.7" />
-                <stop offset="100%" stopColor="#374151" stopOpacity="0" />
-              </linearGradient>
-              <linearGradient id="animatedGradient4" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#1E40AF" stopOpacity="0" />
-                <stop offset="50%" stopColor="#60A5FA" stopOpacity="0.6" />
-                <stop offset="100%" stopColor="#1E40AF" stopOpacity="0" />
-              </linearGradient>
-              <linearGradient id="animatedGradient5" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#111827" stopOpacity="0" />
-                <stop offset="50%" stopColor="#374151" stopOpacity="0.5" />
-                <stop offset="100%" stopColor="#111827" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            
-            {/* Primary animated lines - Stretched wider with enhanced glow */}
-            <path
-              d="M0 400L1920 350"
-              stroke="url(#animatedGradient1)"
-              strokeWidth="6"
-              fill="none"
-              className="animate-pulse drop-shadow-lg animate-super-glow"
-              style={{ filter: 'blur(2px) drop-shadow(0 0 20px rgba(30, 58, 138, 0.8))' }}
-            />
-            <path
-              d="M0 300L1920 380"
-              stroke="url(#animatedGradient2)"
-              strokeWidth="5"
-              fill="none"
-              className="animate-pulse drop-shadow-lg animate-line-glow"
-              style={{ 
-                filter: 'blur(1.5px) drop-shadow(0 0 16px rgba(31, 41, 55, 0.7))', 
-                animationDelay: '1s' 
-              }}
-            />
-            <path
-              d="M0 500L1920 450"
-              stroke="url(#animatedGradient3)"
-              strokeWidth="5"
-              fill="none"
-              className="animate-pulse drop-shadow-lg animate-line-glow"
-              style={{ 
-                filter: 'blur(1.5px) drop-shadow(0 0 16px rgba(55, 65, 81, 0.6))', 
-                animationDelay: '2s' 
-              }}
-            />
-            <path
-              d="M0 200L1920 250"
-              stroke="url(#animatedGradient4)"
-              strokeWidth="4"
-              fill="none"
-              className="animate-pulse drop-shadow-lg glow-pulse"
-              style={{ 
-                filter: 'blur(1.5px) drop-shadow(0 0 14px rgba(30, 58, 138, 0.5))', 
-                animationDelay: '3s' 
-              }}
-            />
-            <path
-              d="M0 600L1920 550"
-              stroke="url(#animatedGradient5)"
-              strokeWidth="4"
-              fill="none"
-              className="animate-pulse drop-shadow-lg glow-pulse"
-              style={{ 
-                filter: 'blur(1.5px) drop-shadow(0 0 14px rgba(31, 41, 55, 0.4))', 
-                animationDelay: '4s' 
-              }}
-            />
-            
-            {/* Diagonal crossing lines - Full width with enhanced glow */}
-            <path
-              d="M0 150L1920 750"
-              stroke="url(#animatedGradient1)"
-              strokeWidth="3"
-              fill="none"
-              className="animate-pulse"
-              style={{ 
-                filter: 'blur(2px) drop-shadow(0 0 12px rgba(30, 58, 138, 0.5))', 
-                animationDelay: '2.5s',
-                opacity: 0.4
-              }}
-            />
-            <path
-              d="M1920 150L0 750"
-              stroke="url(#animatedGradient2)"
-              strokeWidth="3"
-              fill="none"
-              className="animate-pulse"
-              style={{ 
-                filter: 'blur(2px) drop-shadow(0 0 12px rgba(31, 41, 55, 0.4))', 
-                animationDelay: '3.5s',
-                opacity: 0.3
-              }}
-            />
-            <path
-              d="M0 0L1920 540"
-              stroke="url(#animatedGradient3)"
-              strokeWidth="2.5"
-              fill="none"
-              className="animate-pulse"
-              style={{ 
-                filter: 'blur(1.5px) drop-shadow(0 0 10px rgba(55, 65, 81, 0.3))', 
-                animationDelay: '4.5s',
-                opacity: 0.25
-              }}
-            />
-            <path
-              d="M1920 0L0 540"
-              stroke="url(#animatedGradient4)"
-              strokeWidth="2.5"
-              fill="none"
-              className="animate-pulse"
-              style={{ 
-                filter: 'blur(1.5px) drop-shadow(0 0 10px rgba(30, 58, 138, 0.3))', 
-                animationDelay: '5.5s',
-                opacity: 0.25
-              }}
-            />
-          </svg>
+          {/* Brighter Floating Sparkles */}
+          <div 
+            className="absolute top-1/4 left-1/3 w-3 h-3 bg-blue-400/35 rounded-full blur-sm"
+            style={{ 
+              animation: 'sparkle 6s ease-in-out infinite, drift 15s linear infinite',
+              boxShadow: '0 0 10px rgba(59, 130, 246, 0.3)'
+            }}
+          ></div>
+          <div 
+            className="absolute top-2/3 right-1/4 w-2 h-2 bg-indigo-400/40 rounded-full blur-sm"
+            style={{ 
+              animationDelay: '2s',
+              animation: 'sparkle 4s ease-in-out infinite 2s, driftReverse 12s linear infinite 2s',
+              boxShadow: '0 0 8px rgba(99, 102, 241, 0.35)'
+            }}
+          ></div>
+          <div 
+            className="absolute bottom-1/3 left-2/3 w-2.5 h-2.5 bg-purple-400/32 rounded-full blur-sm"
+            style={{ 
+              animationDelay: '4s',
+              animation: 'sparkle 5s ease-in-out infinite 4s, drift 18s linear infinite 4s',
+              boxShadow: '0 0 9px rgba(147, 51, 234, 0.3)'
+            }}
+          ></div>
+          <div 
+            className="absolute top-1/2 right-1/3 w-2 h-2 bg-cyan-400/38 rounded-full blur-sm"
+            style={{ 
+              animationDelay: '1s',
+              animation: 'sparkle 7s ease-in-out infinite 1s, driftSlow 20s linear infinite 1s',
+              boxShadow: '0 0 8px rgba(34, 211, 238, 0.35)'
+            }}
+          ></div>
+          
+          {/* Additional Glowing Particles */}
+          <div 
+            className="absolute top-1/6 right-1/2 w-1.5 h-1.5 bg-pink-400/30 rounded-full blur-sm"
+            style={{ 
+              animationDelay: '3s',
+              animation: 'sparkle 8s ease-in-out infinite 3s, drift 22s linear infinite 3s',
+              boxShadow: '0 0 6px rgba(244, 114, 182, 0.25)'
+            }}
+          ></div>
+          <div 
+            className="absolute bottom-1/4 right-2/3 w-2 h-2 bg-emerald-400/28 rounded-full blur-sm"
+            style={{ 
+              animationDelay: '5s',
+              animation: 'sparkle 6s ease-in-out infinite 5s, driftReverse 16s linear infinite 5s',
+              boxShadow: '0 0 7px rgba(52, 211, 153, 0.25)'
+            }}
+          ></div>
+          
+          {/* Enhanced Moving Glow Streams */}
+          <div 
+            className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-400/20 to-transparent"
+            style={{ 
+              animation: 'streamFlow 8s linear infinite',
+              boxShadow: '0 0 10px rgba(59, 130, 246, 0.2)'
+            }}
+          ></div>
+          <div 
+            className="absolute bottom-0 right-0 w-full h-1 bg-gradient-to-l from-transparent via-purple-400/18 to-transparent"
+            style={{ 
+              animationDelay: '4s',
+              animation: 'streamFlowReverse 10s linear infinite 4s',
+              boxShadow: '0 0 9px rgba(147, 51, 234, 0.2)'
+            }}
+          ></div>
+          
+          {/* Vertical Glow Streams */}
+          <div 
+            className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-transparent via-indigo-400/15 to-transparent"
+            style={{ 
+              animationDelay: '6s',
+              animation: 'streamVertical 12s linear infinite 6s',
+              boxShadow: '0 0 8px rgba(99, 102, 241, 0.15)'
+            }}
+          ></div>
+          <div 
+            className="absolute right-0 top-0 w-1 h-full bg-gradient-to-t from-transparent via-cyan-400/13 to-transparent"
+            style={{ 
+              animationDelay: '8s',
+              animation: 'streamVerticalReverse 14s linear infinite 8s',
+              boxShadow: '0 0 7px rgba(34, 211, 238, 0.15)'
+            }}
+          ></div>
         </div>
+        
+        {/* Enhanced Sophisticated Grid Pattern with Glow */}
+        <div 
+          className="absolute inset-0 opacity-15"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: '60px 60px',
+            filter: 'drop-shadow(0 0 1px rgba(59, 130, 246, 0.15))'
+          }}
+        ></div>
+        
+        {/* Enhanced Subtle Dot Matrix with Glow */}
+        <div 
+          className="absolute inset-0 opacity-35"
+          style={{
+            backgroundImage: `radial-gradient(circle at 25% 25%, rgba(99, 102, 241, 0.5) 1px, transparent 1px)`,
+            backgroundSize: '50px 50px',
+            filter: 'drop-shadow(0 0 1px rgba(99, 102, 241, 0.4))'
+          }}
+        ></div>
       </div>
 
-      {/* Main Content - Optimized Layout */}
-      <div className="relative z-10 w-full max-w-lg mx-auto">
+      {/* CSS Animations for Moving Background */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes float {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            25% { transform: translateY(-20px) translateX(10px); }
+            50% { transform: translateY(-10px) translateX(-15px); }
+            75% { transform: translateY(-25px) translateX(5px); }
+          }
+          
+          @keyframes floatReverse {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            25% { transform: translateY(15px) translateX(-10px); }
+            50% { transform: translateY(25px) translateX(20px); }
+            75% { transform: translateY(5px) translateX(-5px); }
+          }
+          
+          @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-15px) translateX(10px); }
+          }
+          
+          @keyframes floatGentle {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            33% { transform: translateY(-12px) translateX(8px); }
+            66% { transform: translateY(8px) translateX(-12px); }
+          }
+          
+          @keyframes glowPulse {
+            0%, 100% { 
+              opacity: 0.6; 
+              transform: scale(1); 
+              filter: brightness(1) blur(3xl);
+            }
+            50% { 
+              opacity: 1; 
+              transform: scale(1.05); 
+              filter: brightness(1.3) blur(3xl);
+            }
+          }
+          
+          @keyframes sparkle {
+            0%, 100% { opacity: 0.4; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.3); }
+          }
+          
+          @keyframes drift {
+            0% { transform: translateX(-20px) translateY(0px); }
+            25% { transform: translateX(15px) translateY(-10px); }
+            50% { transform: translateX(-10px) translateY(-5px); }
+            75% { transform: translateX(20px) translateY(5px); }
+            100% { transform: translateX(-20px) translateY(0px); }
+          }
+          
+          @keyframes driftReverse {
+            0% { transform: translateX(20px) translateY(0px); }
+            25% { transform: translateX(-15px) translateY(10px); }
+            50% { transform: translateX(10px) translateY(5px); }
+            75% { transform: translateX(-20px) translateY(-5px); }
+            100% { transform: translateX(20px) translateY(0px); }
+          }
+          
+          @keyframes driftSlow {
+            0% { transform: translateX(0px) translateY(-10px); }
+            50% { transform: translateX(15px) translateY(10px); }
+            100% { transform: translateX(0px) translateY(-10px); }
+          }
+          
+          @keyframes streamFlow {
+            0% { transform: translateX(-100%); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateX(100%); opacity: 0; }
+          }
+          
+          @keyframes streamFlowReverse {
+            0% { transform: translateX(100%); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateX(-100%); opacity: 0; }
+          }
+          
+          @keyframes streamVertical {
+            0% { transform: translateY(-100%); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(100%); opacity: 0; }
+          }
+          
+          @keyframes streamVerticalReverse {
+            0% { transform: translateY(100%); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-100%); opacity: 0; }
+          }
+        `
+      }} />
+
+      {/* Main Content Container - Compact Single Page Layout */}
+      <div className="relative z-10 w-full max-w-md mx-auto px-6">
         
-        {/* LOGO SECTION - Close to Credentials */}
-        <div className="text-center mb-4" style={{ animation: 'logoFadeIn 1.2s ease-out' }}>
-          <div className="flex justify-center relative">
-            {/* Dark backdrop/glow behind logo */}
-            <div className="absolute inset-0 flex justify-center items-center">
-              <div className="w-72 h-72 bg-gray-900/80 rounded-full blur-3xl opacity-90"></div>
-              <div className="absolute w-60 h-60 bg-slate-800/70 rounded-full blur-2xl opacity-85"></div>
-              <div className="absolute w-48 h-48 bg-gray-800/60 rounded-full blur-xl opacity-80"></div>
+        {/* Enhanced Compact Logo Section */}
+        <div className="text-center mb-8">
+          <div className="flex justify-center">
+            <div className="relative group">
+              {/* Enhanced Multi-Layer Glow Effect */}
+              <div className="absolute inset-0 -m-6 bg-gradient-to-r from-blue-400/20 via-indigo-500/23 to-purple-500/20 rounded-full blur-2xl group-hover:blur-3xl transition-all duration-500 animate-pulse"></div>
+              <div className="absolute inset-0 -m-4 bg-gradient-to-r from-cyan-400/15 via-blue-500/18 to-indigo-600/15 rounded-full blur-xl group-hover:blur-2xl transition-all duration-500 animate-pulse" style={{ animationDelay: '1s' }}></div>
+              <div className="absolute inset-0 -m-2 bg-gradient-to-r from-blue-300/13 via-indigo-400/15 to-purple-400/13 rounded-full blur-lg transition-all duration-500 animate-pulse" style={{ animationDelay: '2s' }}></div>
+              
+              <Logo 
+                variant="login"
+                className="relative z-10 transition-all duration-500 group-hover:scale-110 drop-shadow-2xl"
+                style={{
+                  filter: 'brightness(1.1) contrast(1.1) saturate(1.1) drop-shadow(0 0 10px rgba(59, 130, 246, 0.25))',
+                  maxHeight: '90px',
+                  width: 'auto'
+                }}
+              />
             </div>
-            {/* Logo with enhanced visibility */}
-            <Logo 
-              variant="login" 
-              className="h-48 sm:h-52 md:h-56 lg:h-60 w-auto object-contain drop-shadow-2xl filter brightness-125 contrast-110 relative z-10"
-              style={{
-                filter: 'drop-shadow(0 12px 40px rgba(0, 0, 0, 0.8)) drop-shadow(0 4px 16px rgba(59, 130, 246, 0.3)) drop-shadow(0 0 30px rgba(0, 0, 0, 0.9)) brightness(1.25) contrast(1.1)',
-                maxWidth: '500px'
-              }}
-            />
           </div>
         </div>
 
-        {/* CREDENTIALS SECTION - Close to Logo */}
-        <div className="w-full max-w-md mx-auto" style={{ animation: 'formFadeIn 1.2s ease-out 0.4s both' }}>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            
-            {/* Username Field - Compact */}
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2 pl-1">
-                Username
-              </label>
+        {/* Slim Aesthetic Credential Fields - NO Background Container */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          
+          {/* Slim Username Field */}
+          <div className="group">
+            <label htmlFor="username" className="block text-xs font-medium text-blue-300/80 mb-2 uppercase tracking-wider transition-colors duration-300 group-focus-within:text-blue-400">
+              Username
+            </label>
+            <div className="relative">
               <input
                 id="username"
                 name="username"
                 type="text"
                 required
-                className="w-full px-6 py-2.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400/80 focus:border-blue-400/80 focus:bg-white/15 transition-all duration-300 text-base"
-                placeholder="Enter your username"
+                className="w-full px-4 py-3 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:border-blue-500/40 focus:ring-1 focus:ring-blue-400/10 focus:bg-slate-900/80 transition-all duration-300 hover:border-slate-600/60 hover:bg-slate-900/70 backdrop-blur-sm"
+                placeholder="Enter username"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={handleUsernameChange}
+                autoComplete="username"
               />
+              {/* Subtle Field Glow */}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-indigo-500/5 rounded-xl blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 -z-10"></div>
             </div>
+          </div>
 
-            {/* Password Field - Compact */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2 pl-1">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  className="w-full px-6 py-2.5 pr-14 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400/80 focus:border-blue-400/80 focus:bg-white/15 transition-all duration-300 text-base"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-white transition-colors duration-300"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeSlashIcon className="h-5 w-5" />
-                  ) : (
-                    <EyeIcon className="h-5 w-5" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Login Button - Compact */}
-            <div className="pt-2">
+          {/* Slim Password Field */}
+          <div className="group">
+            <label htmlFor="password" className="block text-xs font-medium text-blue-300/80 mb-2 uppercase tracking-wider transition-colors duration-300 group-focus-within:text-blue-400">
+              Password
+            </label>
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                required
+                className="w-full px-4 py-3 pr-12 bg-slate-900/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:border-blue-500/40 focus:ring-1 focus:ring-blue-400/10 focus:bg-slate-900/80 transition-all duration-300 hover:border-slate-600/60 hover:bg-slate-900/70 backdrop-blur-sm"
+                placeholder="Enter password"
+                value={password}
+                onChange={handlePasswordChange}
+                autoComplete="current-password"
+              />
               <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/60 focus:ring-offset-2 focus:ring-offset-transparent disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+                type="button"
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-blue-400 transition-all duration-300"
+                onClick={togglePasswordVisibility}
+                tabIndex={-1}
               >
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                    Signing in...
-                  </div>
+                {showPassword ? (
+                  <EyeSlashIcon className="h-4 w-4" />
                 ) : (
-                  'Sign In'
+                  <EyeIcon className="h-4 w-4" />
                 )}
               </button>
+              {/* Subtle Field Glow */}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-xl blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 -z-10"></div>
             </div>
-          </form>
+          </div>
 
-          {/* Footer Info - Compact */}
-          <div className="mt-4 text-center">
-            <p className="text-xs text-gray-400/80">
-              Quotation & Invoicing System
-            </p>
-            <p className="text-xs text-gray-500/80 mt-1">
-              Secure • Professional • Reliable
-            </p>
+          {/* Compact Aesthetic Sign In Button */}
+          <div className="pt-4">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400/30 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+            >
+              <div className="relative z-10 flex items-center justify-center">
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    <span>Signing in...</span>
+                  </div>
+                ) : (
+                  <span className="font-medium">Sign In</span>
+                )}
+              </div>
+            </button>
+          </div>
+        </form>
+        
+        {/* Compact Footer Info */}
+        <div className="mt-6 text-center space-y-3">
+          <div className="flex items-center justify-center space-x-4 text-xs text-slate-500">
+            <div className="flex items-center space-x-1">
+              <div className="w-1.5 h-1.5 bg-emerald-500/60 rounded-full animate-pulse"></div>
+              <span>Secure</span>
+            </div>
+            <div className="w-0.5 h-0.5 bg-slate-700 rounded-full"></div>
+            <div className="flex items-center space-x-1">
+              <div className="w-1.5 h-1.5 bg-blue-500/60 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+              <span>Professional</span>
+            </div>
+            <div className="w-0.5 h-0.5 bg-slate-700 rounded-full"></div>
+            <div className="flex items-center space-x-1">
+              <div className="w-1.5 h-1.5 bg-purple-500/60 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
+              <span>Reliable</span>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Enhanced CSS animations */}
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          @keyframes logoFadeIn {
-            0% {
-              opacity: 0;
-              transform: translateY(-30px) scale(0.8);
-            }
-            60% {
-              opacity: 0.8;
-              transform: translateY(-10px) scale(1.05);
-            }
-            100% {
-              opacity: 1;
-              transform: translateY(0) scale(1);
-            }
-          }
-
-          @keyframes formFadeIn {
-            0% {
-              opacity: 0;
-              transform: translateY(30px);
-            }
-            100% {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-          
-          @keyframes fadeIn {
-            from {
-              opacity: 0;
-              transform: translateY(30px) scale(0.95);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0) scale(1);
-            }
-          }
-          
-          @keyframes shadowPulse {
-            0%, 100% {
-              box-shadow: 
-                0 25px 50px -12px rgba(0, 0, 0, 0.8),
-                0 10px 20px -5px rgba(0, 0, 0, 0.6),
-                0 0 0 1px rgba(255, 255, 255, 0.05),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            }
-            50% {
-              box-shadow: 
-                0 35px 60px -12px rgba(0, 0, 0, 0.9),
-                0 15px 25px -5px rgba(0, 0, 0, 0.7),
-                0 0 0 1px rgba(255, 255, 255, 0.08),
-                inset 0 1px 0 rgba(255, 255, 255, 0.15);
-            }
-          }
-          
-          @keyframes glowPulse {
-            0%, 100% {
-              filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.3));
-            }
-            50% {
-              filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.6)) drop-shadow(0 0 25px rgba(59, 130, 246, 0.4));
-            }
-          }
-          /* Enhanced Map Line Animations */
-          @keyframes lineGlow {
-            0%, 100% {
-              filter: blur(2px) drop-shadow(0 0 8px currentColor);
-            }
-            50% {
-              filter: blur(1px) drop-shadow(0 0 25px currentColor) drop-shadow(0 0 35px currentColor);
-            }
-          }
-          
-          @keyframes superGlow {
-            0%, 100% {
-              filter: blur(2px) drop-shadow(0 0 15px rgba(30, 58, 138, 0.6));
-            }
-            50% {
-              filter: blur(1px) drop-shadow(0 0 30px rgba(30, 58, 138, 0.9)) drop-shadow(0 0 45px rgba(59, 130, 246, 0.7));
-            }
-          }
-          
-          .animate-line-glow {
-            animation: lineGlow 4s ease-in-out infinite;
-          }
-          
-          .animate-super-glow {
-            animation: superGlow 3s ease-in-out infinite;
-          }shadow-3xl {
-            animation: shadowPulse 4s ease-in-out infinite;
-          }
-          
-          .glow-pulse {
-            animation: glowPulse 3s ease-in-out infinite;
-          }
-          
-          .orb-float {
-            animation: orbFloat 6s ease-in-out infinite;
-          }
-          
-          /* Enhanced Map Line Animations */
-          @keyframes lineGlow {
-            0%, 100% {
-              filter: blur(1px) drop-shadow(0 0 3px currentColor);
-            }
-            50% {
-              filter: blur(0.5px) drop-shadow(0 0 8px currentColor) drop-shadow(0 0 12px currentColor);
-            }
-          }
-          
-          .animate-line-glow {
-            animation: lineGlow 4s ease-in-out infinite;
-          }
-          
-          /* Custom scrollbar */
-          ::-webkit-scrollbar {
-            width: 8px;
-          }
-          
-          ::-webkit-scrollbar-track {
-            background: rgba(75, 85, 99, 0.3);
-            border-radius: 4px;
-          }
-          
-          ::-webkit-scrollbar-thumb {
-            background: rgba(156, 163, 175, 0.5);
-            border-radius: 4px;
-          }
-          
-          ::-webkit-scrollbar-thumb:hover {
-            background: rgba(156, 163, 175, 0.7);
-          }
-        `
-      }} />
     </div>
   );
 };

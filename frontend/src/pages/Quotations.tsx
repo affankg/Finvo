@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getCurrencySymbol } from '../utils/currency';
 import BulkDeleteToolbar from '../components/BulkDeleteToolbar';
 import BulkDeleteConfirmation from '../components/BulkDeleteConfirmation';
+import { useQuotationToProject } from '../hooks/useQuotationToProject';
 
 interface QuotationItem {
   service_id: number;
@@ -16,6 +17,7 @@ interface QuotationItem {
 
 const Quotations = () => {
   const { user } = useAuth();
+  const { isCreatingProject, createProjectFromQuotation, navigateToProject } = useQuotationToProject();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [services, setServices] = useState<Service[]>([]);
@@ -276,6 +278,29 @@ const Quotations = () => {
     }
   };
 
+  const handleCreateProject = async (quotationId: number) => {
+    try {
+      const project = await createProjectFromQuotation(quotationId);
+      
+      // Update the quotation status to converted in the local state
+      setQuotations(prev => 
+        prev.map(q => 
+          q.id === quotationId 
+            ? { ...q, status: 'converted' as const }
+            : q
+        )
+      );
+      
+      // Navigate to the new project after a short delay to show success message
+      setTimeout(() => {
+        navigateToProject(project.id);
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Failed to create project:', error);
+    }
+  };
+
   const handleSelectQuotation = (quotationId: number, isSelected: boolean) => {
     if (isSelected) {
       setSelectedQuotations(prev => [...prev, quotationId]);
@@ -363,7 +388,7 @@ const Quotations = () => {
     });
     setEditingQuotation(null);
     setIsModalOpen(true);
-    toast.info('Quotation duplicated - ready for editing');
+    toast.success('Quotation duplicated - ready for editing');
   };
 
   const openModal = () => {
@@ -421,19 +446,6 @@ const Quotations = () => {
       
       return sum + (subtotal * taxRate);
     }, 0);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'draft': return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
-      case 'sent': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-      case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'approved': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'rejected': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-      case 'converted': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
-      case 'expired': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
-    }
   };
 
   if (loading) {
@@ -853,7 +865,7 @@ const Quotations = () => {
                         </button>
                         
                         {/* Quick Convert to Invoice button for approved quotations with enhanced effects */}
-                        {(quotation.status === 'approved' && quotation.status !== 'converted') && (
+                        {quotation.status === 'approved' && (
                           <button
                             onClick={() => handleStatusChange(quotation.id, 'converted')}
                             className="relative group text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 px-1.5 py-0.5 rounded text-xs 
@@ -866,6 +878,27 @@ const Quotations = () => {
                             {/* Shimmer effect */}
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 transform -skew-x-12 group-hover:animate-shimmer rounded"></div>
                             <span className="relative z-10 group-hover:font-semibold transition-all duration-300">→Inv</span>
+                          </button>
+                        )}
+                        
+                        {/* Create Project button for approved quotations */}
+                        {quotation.status === 'approved' && (
+                          <button
+                            onClick={() => handleCreateProject(quotation.id)}
+                            disabled={isCreatingProject}
+                            className="relative group text-blue-600 hover:text-blue-900 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-1.5 py-0.5 rounded text-xs 
+                                      transition-all duration-300 ease-out
+                                      hover:scale-110 hover:shadow-lg hover:-translate-y-1
+                                      active:scale-95 active:translate-y-0
+                                      floating-action-button
+                                      disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                            title="Create Project from Quotation"
+                          >
+                            {/* Shimmer effect */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 transform -skew-x-12 group-hover:animate-shimmer rounded"></div>
+                            <span className="relative z-10 group-hover:font-semibold transition-all duration-300">
+                              {isCreatingProject ? '...' : '→Proj'}
+                            </span>
                           </button>
                         )}
                         

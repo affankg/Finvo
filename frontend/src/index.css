@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import custom scrollbar styles */
+@import './styles/scrollbar.css';
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -26,6 +29,26 @@ body {
   min-height: 100vh;
 }
 
+/* Performance optimizations */
+* {
+  box-sizing: border-box;
+}
+
+/* Reduce repaints */
+.animate-spin {
+  will-change: transform;
+}
+
+/* CSS containment for better performance */
+.page-container {
+  contain: layout style paint;
+}
+
+/* Optimize font loading */
+.font-inter {
+  font-display: swap;
+}
+
 /* Custom logo enhancements */
 .logo-sharp {
   image-rendering: crisp-edges;
@@ -33,6 +56,25 @@ body {
   image-rendering: -moz-crisp-edges;
   image-rendering: pixelated;
   -ms-interpolation-mode: bicubic;
+}
+
+/* NEW: Balanced prominent logo styles */
+.logo-clean {
+  filter: brightness(1.15) contrast(1.1) saturate(1.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: block !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain;
+  image-rendering: auto;
+  background: none !important;
+  border: none !important;
+  backdrop-filter: none !important;
+}
+
+.logo-clean:hover {
+  filter: brightness(1.25) contrast(1.15) saturate(1.15);
+  transform: scale(1.05);
 }
 
 .logo-enhanced {

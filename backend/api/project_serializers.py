@@ -4,12 +4,16 @@ Project Management Serializers for BS Engineering System
 
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.db import models
+from django.conf import settings
 from .project_models import (
     Project, 
     ProjectAssignment, 
     ProjectAttachment, 
     ProjectMilestone, 
-    ProjectNote
+    ProjectNote,
+    ProjectExpenseCategory,
+    ProjectExpense
 )
 from .serializers import ClientSerializer, UserSerializer
 from .financial_serializers import FinancialActivitySerializer
@@ -309,3 +313,167 @@ class ProjectFinancialSummarySerializer(serializers.Serializer):
     # Percentages
     profit_margin = serializers.DecimalField(max_digits=5, decimal_places=2)
     budget_utilization = serializers.DecimalField(max_digits=5, decimal_places=2)
+
+
+class ProjectExpenseCategorySerializer(serializers.ModelSerializer):
+    """Serializer for project expense categories"""
+    subcategories = serializers.SerializerMethodField()
+    total_expenses = serializers.SerializerMethodField()
+    expenses_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ProjectExpenseCategory
+        fields = [
+            'id', 'name', 'description', 'is_predefined', 'is_active', 
+            'parent_category', 'subcategories', 'total_expenses', 'expenses_count',
+            'created_at'
+        ]
+        read_only_fields = ['created_at', 'is_predefined']
+    
+    def get_subcategories(self, obj):
+        if obj.subcategories.exists():
+            return ProjectExpenseCategorySerializer(obj.subcategories.filter(is_active=True), many=True).data
+        return []
+    
+    def get_total_expenses(self, obj):
+        # Get project from context if available for filtering
+        project = self.context.get('project')
+        if project:
+            return obj.expenses.filter(
+                project=project,
+                status__in=['approved', 'paid']
+            ).aggregate(total=models.Sum('total_amount'))['total'] or 0
+        return obj.expenses.filter(status__in=['approved', 'paid']).aggregate(
+            total=models.Sum('total_amount')
+        )['total'] or 0
+    
+    def get_expenses_count(self, obj):
+        project = self.context.get('project')
+        if project:
+            return obj.expenses.filter(project=project).count()
+        return obj.expenses.count()
+
+
+class ProjectExpenseSerializer(serializers.ModelSerializer):
+    """Serializer for project expenses"""
+    category_details = ProjectExpenseCategorySerializer(source='category', read_only=True)
+    created_by_details = UserSerializer(source='created_by', read_only=True)
+    approved_by_details = UserSerializer(source='approved_by', read_only=True)
+    attachment_url = serializers.SerializerMethodField()
+    attachment_size_formatted = serializers.SerializerMethodField()
+    currency_symbol = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ProjectExpense
+        fields = [
+            'id', 'expense_number', 'project', 'category', 'category_details',
+            'subcategory', 'description', 'amount', 'currency', 'currency_symbol',
+            'tax_rate', 'tax_amount', 'total_amount', 'payment_method', 
+            'expense_date', 'payment_date', 'vendor_name', 'vendor_contact',
+            'invoice_reference', 'status', 'approved_by', 'approved_by_details',
+            'approved_at', 'notes', 'attachment', 'attachment_url', 
+            'attachment_name', 'attachment_size_formatted', 'created_by', 
+            'created_by_details', 'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'expense_number', 'tax_amount', 'total_amount', 'approved_by',
+            'approved_at', 'attachment_name', 'created_by', 'created_at', 'updated_at'
+        ]
+    
+    def get_attachment_url(self, obj):
+        if obj.attachment:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.attachment.url)
+            return obj.attachment.url
+        return None
+    
+    def get_attachment_size_formatted(self, obj):
+        if obj.attachment and hasattr(obj.attachment, 'size'):
+            size = obj.attachment.size
+            for unit in ['bytes', 'KB', 'MB', 'GB']:
+                if size < 1024.0:
+                    return f"{size:.1f} {unit}"
+                size /= 1024.0
+            return f"{size:.1f} TB"
+        return None
+    
+    def get_currency_symbol(self, obj):
+        currency_choices = getattr(settings, 'CURRENCY_CHOICES', [])
+        for code, name, symbol in currency_choices:
+            if code == obj.currency:
+                return symbol
+        return obj.currency
+    
+    def validate(self, data):
+        """Custom validation for expense data"""
+        if data.get('expense_date') and data.get('payment_date'):
+            if data['payment_date'] < data['expense_date']:
+                raise serializers.ValidationError({
+                    'payment_date': 'Payment date cannot be earlier than expense date.'
+                })
+        
+        if data.get('amount') and data['amount'] <= 0:
+            raise serializers.ValidationError({
+                'amount': 'Amount must be greater than zero.'
+            })
+        
+        if data.get('tax_rate') and (data['tax_rate'] < 0 or data['tax_rate'] > 100):
+            raise serializers.ValidationError({
+                'tax_rate': 'Tax rate must be between 0 and 100.'
+            })
+        
+        return data
+
+
+class ProjectExpenseListSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for expense lists"""
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+    currency_symbol = serializers.SerializerMethodField()
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    class Meta:
+        model = ProjectExpense
+        fields = [
+            'id', 'expense_number', 'category_name', 'subcategory', 
+            'description', 'amount', 'currency', 'currency_symbol',
+            'total_amount', 'payment_method', 'expense_date', 'status',
+            'status_display', 'vendor_name', 'created_by_name', 'created_at'
+        ]
+    
+    def get_currency_symbol(self, obj):
+        currency_choices = getattr(settings, 'CURRENCY_CHOICES', [])
+        for code, name, symbol in currency_choices:
+            if code == obj.currency:
+                return symbol
+        return obj.currency
+
+
+class ProjectExpenseSummarySerializer(serializers.Serializer):
+    """Serializer for project expense summaries and analytics"""
+    project_id = serializers.IntegerField()
+    project_name = serializers.CharField()
+    
+    # Total amounts
+    total_expenses = serializers.DecimalField(max_digits=15, decimal_places=2)
+    total_pending = serializers.DecimalField(max_digits=15, decimal_places=2)
+    total_approved = serializers.DecimalField(max_digits=15, decimal_places=2)
+    total_paid = serializers.DecimalField(max_digits=15, decimal_places=2)
+    
+    # Counts
+    expenses_count = serializers.IntegerField()
+    pending_count = serializers.IntegerField()
+    approved_count = serializers.IntegerField()
+    paid_count = serializers.IntegerField()
+    
+    # Category breakdown
+    expenses_by_category = serializers.ListField()
+    top_categories = serializers.ListField()
+    
+    # Recent expenses
+    recent_expenses = ProjectExpenseListSerializer(many=True)
+    
+    # Currency
+    currency = serializers.CharField()
+    currency_symbol = serializers.CharField()

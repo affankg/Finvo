@@ -29,7 +29,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-#yxitycs-micb1si^edzw
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default='False', cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
+ALLOWED_HOSTS = ['*', '192.168.100.113', '127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -172,10 +172,18 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3001",
     "http://localhost:3002",
     "http://127.0.0.1:3002",
+    "http://localhost:3003",
+    "http://127.0.0.1:3003",
+    "http://localhost:3004",
+    "http://127.0.0.1:3004",
     "http://localhost:3005",
     "http://127.0.0.1:3005",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://192.168.100.113:3003",
+    "http://192.168.100.113:3004",
+    "http://192.168.100.113:3000",
+    "http://192.168.100.113:5173",
 ]
 
 # Add production frontend URL when deploying

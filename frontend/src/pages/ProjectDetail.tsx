@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import projectService, { Project, ProjectDashboard } from '../services/projectService';
+import projectService, { Project, ProjectDashboard } from '../services/projectService_fixed';
+import ExpenseManagement from '../components/ExpenseManagement';
 
-const ProjectDetail: React.FC = () => {
+const ProjectDetail: React.FC = memo(() => {
   const { id } = useParams<{ id: string }>();
   const [dashboard, setDashboard] = useState<ProjectDashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'team' | 'milestones' | 'notes'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'team' | 'milestones' | 'notes' | 'expenses'>('overview');
 
   useEffect(() => {
     if (id) {
@@ -22,21 +23,27 @@ const ProjectDetail: React.FC = () => {
       setDashboard(data);
       setError('');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch project dashboard');
-      console.error('Error fetching project dashboard:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to fetch project dashboard');
     } finally {
       setLoading(false);
     }
   };
 
   const formatCurrency = (amount: string, currency: string) => {
+    if (!amount || amount === 'undefined' || amount === 'null') {
+      return `${currency} 0`;
+    }
     const currencySymbols: { [key: string]: string } = {
       'PKR': 'Rs',
       'USD': '$',
       'EUR': '€',
       'GBP': '£'
     };
-    return `${currencySymbols[currency] || currency} ${parseFloat(amount).toLocaleString()}`;
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount)) {
+      return `${currencySymbols[currency] || currency} 0`;
+    }
+    return `${currencySymbols[currency] || currency} ${parsedAmount.toLocaleString()}`;
   };
 
   const formatDate = (dateString: string) => {
@@ -81,12 +88,12 @@ const ProjectDetail: React.FC = () => {
     );
   }
 
-  if (error || !dashboard) {
+  if (error) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
         <div className="max-w-7xl mx-auto">
           <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded-lg">
-            {error || 'Project not found'}
+            Error: {error}
           </div>
           <Link
             to="/projects"
@@ -94,6 +101,18 @@ const ProjectDetail: React.FC = () => {
           >
             ← Back to Projects
           </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!dashboard) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 text-yellow-700 dark:text-yellow-200 px-4 py-3 rounded-lg">
+            Loading project dashboard...
+          </div>
         </div>
       </div>
     );
@@ -179,6 +198,7 @@ const ProjectDetail: React.FC = () => {
                 { key: 'analytics', label: 'Analytics' },
                 { key: 'team', label: 'Team' },
                 { key: 'milestones', label: 'Milestones' },
+                { key: 'expenses', label: 'Expenses' },
                 { key: 'notes', label: 'Notes' }
               ].map((tab) => (
                 <button
@@ -357,6 +377,16 @@ const ProjectDetail: React.FC = () => {
               </div>
             )}
 
+            {activeTab === 'expenses' && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Project Expenses</h3>
+                <ExpenseManagement 
+                  projectId={project.id} 
+                  projectCurrency={project.currency}
+                />
+              </div>
+            )}
+
             {activeTab === 'notes' && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Project Notes</h3>
@@ -370,6 +400,6 @@ const ProjectDetail: React.FC = () => {
       </div>
     </div>
   );
-};
+});
 
 export default ProjectDetail;

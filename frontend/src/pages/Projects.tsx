@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import projectService, { Project } from '../services/projectService';
+import projectService, { Project } from '../services/projectService_fixed';
 import { api, Client } from '../services/api';
 
 interface CreateProjectFormData {
@@ -97,6 +97,7 @@ const Projects: React.FC = () => {
   const fetchProjects = async () => {
     try {
       setLoading(true);
+      setError(''); // Clear previous errors
       const params: any = {};
       if (selectedClient) params.client = parseInt(selectedClient);
       if (selectedStatus) params.status = selectedStatus;
@@ -105,13 +106,34 @@ const Projects: React.FC = () => {
       console.log('Fetching projects with params:', params);
       const data = await projectService.getProjects(params);
       console.log('Projects fetched successfully:', data);
-      setProjects(data.results || data);
-      setError('');
+      
+      // Handle both paginated and non-paginated responses
+      if (Array.isArray(data)) {
+        setProjects(data);
+      } else if (data.results && Array.isArray(data.results)) {
+        setProjects(data.results);
+      } else {
+        console.warn('Unexpected data format:', data);
+        setProjects([]);
+      }
     } catch (err: any) {
       console.error('Error fetching projects:', err);
       console.error('Error response:', err.response?.data);
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch projects';
+      console.error('Error status:', err.response?.status);
+      
+      let errorMessage = 'Failed to fetch projects';
+      if (err.response?.status === 401) {
+        errorMessage = 'Authentication failed. Please log in again.';
+      } else if (err.response?.data?.detail) {
+        errorMessage = err.response.data.detail;
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
       setError(errorMessage);
+      setProjects([]); // Clear projects on error
     } finally {
       setLoading(false);
     }
@@ -176,10 +198,13 @@ const Projects: React.FC = () => {
       const projectData = {
         ...formData,
         client: parseInt(formData.client.toString()),
-        project_manager: formData.project_manager ? parseInt(formData.project_manager.toString()) : null,
-        budget: formData.budget ? parseFloat(formData.budget) : null,
+        project_manager: formData.project_manager ? parseInt(formData.project_manager.toString()) : undefined,
+        budget: formData.budget || '0',
         status: formData.status as 'planning' | 'active' | 'on_hold' | 'completed' | 'cancelled',
         priority: formData.priority as 'low' | 'medium' | 'high' | 'critical',
+        // Handle optional date fields - send null instead of empty strings
+        end_date: formData.end_date || null,
+        estimated_completion_date: formData.estimated_completion_date || null,
       };
 
       console.log('Creating project with data:', projectData);

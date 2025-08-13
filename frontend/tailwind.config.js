@@ -15,4 +15,8 @@ export default {
     },
   },
   plugins: [],
+  // Optimize for production
+  corePlugins: {
+    preflight: true,
+  }
 }

@@ -1,14 +1,17 @@
 import axios from 'axios';
 
-// API Base URL
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+// API Base URL - Updated to match Django backend port
+const API_BASE_URL = 'http://192.168.100.113:8000/api';
 
-// Create axios instance with base URL
+// Create axios instance with base URL and optimized settings
 export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // 10 second timeout
+  // Enable request/response compression
+  decompress: true,
 });
 
 // Request interceptor to add auth token
@@ -559,6 +562,48 @@ export const usersAPI = {
     api.post('/users/bulk_delete/', { ids }),
 };
 
+// Projects
+export interface Project {
+  id: number;
+  name: string;
+  project_number: string;
+  description: string;
+  client: number;
+  client_name?: string;
+  status: 'planning' | 'active' | 'on_hold' | 'completed' | 'cancelled';
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  project_type: string;
+  start_date: string;
+  end_date: string | null;
+  estimated_completion_date: string | null;
+  location: string;
+  budget: string;
+  currency: string;
+  project_manager: number | null;
+  project_manager_name?: string;
+  created_by: number;
+  created_by_name?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export const projectsAPI = {
+  getAll: (params?: { client?: number; status?: string; search?: string }) =>
+    api.get<PaginatedResponse<Project>>('/projects/', { params }),
+  getById: (id: number) =>
+    api.get<Project>(`/projects/${id}/`),
+  create: (data: Omit<Project, 'id' | 'project_number' | 'created_at' | 'updated_at' | 'created_by'>) =>
+    api.post<Project>('/projects/', data),
+  update: (id: number, data: Partial<Project>) =>
+    api.patch<Project>(`/projects/${id}/`, data),
+  delete: (id: number) =>
+    api.delete(`/projects/${id}/`),
+  getDashboard: () =>
+    api.get('/projects/dashboard/'),
+  bulkDelete: (ids: number[]) =>
+    api.post('/projects/bulk_delete/', { ids }),
+};
+
 // Activity Logs
 export const activityLogsAPI = {
   getAll: (content_type?: string) =>
@@ -604,6 +649,7 @@ export default {
   quotationsAPI,
   invoicesAPI,
   usersAPI,
+  projectsAPI,
   activityLogsAPI,
   interactionsAPI,
   clientAttachmentsAPI,

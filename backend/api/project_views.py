@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from django.db.models import Q, Sum, Count, Avg, F
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
+from django.conf import settings
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
@@ -16,7 +17,9 @@ from .project_models import (
     ProjectAssignment, 
     ProjectAttachment, 
     ProjectMilestone, 
-    ProjectNote
+    ProjectNote,
+    ProjectExpenseCategory,
+    ProjectExpense
 )
 from .project_serializers import (
     ProjectListSerializer,
@@ -27,7 +30,11 @@ from .project_serializers import (
     ProjectAttachmentSerializer,
     ProjectMilestoneSerializer,
     ProjectNoteSerializer,
-    ProjectFinancialSummarySerializer
+    ProjectFinancialSummarySerializer,
+    ProjectExpenseCategorySerializer,
+    ProjectExpenseSerializer,
+    ProjectExpenseListSerializer,
+    ProjectExpenseSummarySerializer
 )
 from .permissions import RoleBasedPermission
 from .financial_models import FinancialActivity
@@ -75,8 +82,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return ProjectDetailSerializer
     
     def perform_create(self, serializer):
-        """Set the current user as the creator"""
-        serializer.save(created_by=self.request.user)
+        """Set the current user as the creator and handle validation"""
+        try:
+            serializer.save(created_by=self.request.user)
+        except Exception as e:
+            print(f"Error creating project: {e}")
+            print(f"Validation errors: {serializer.errors}")
+            raise
     
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
@@ -292,6 +304,174 @@ class ProjectViewSet(viewsets.ModelViewSet):
             {'error': 'Invalid status'}, 
             status=status.HTTP_400_BAD_REQUEST
         )
+    
+    @action(detail=True, methods=['get', 'post'])
+    def expenses(self, request, pk=None):
+        """Manage project expenses"""
+        project = self.get_object()
+        
+        if request.method == 'GET':
+            # Get query parameters for filtering
+            category = request.query_params.get('category')
+            status_filter = request.query_params.get('status')
+            date_from = request.query_params.get('date_from')
+            date_to = request.query_params.get('date_to')
+            
+            # Build queryset
+            expenses = project.expenses.all()
+            
+            if category:
+                expenses = expenses.filter(category_id=category)
+            if status_filter:
+                expenses = expenses.filter(status=status_filter)
+            if date_from:
+                expenses = expenses.filter(expense_date__gte=date_from)
+            if date_to:
+                expenses = expenses.filter(expense_date__lte=date_to)
+            
+            # Order by expense date (newest first)
+            expenses = expenses.order_by('-expense_date', '-created_at')
+            
+            # Paginate if needed
+            page = self.paginate_queryset(expenses)
+            if page is not None:
+                serializer = ProjectExpenseListSerializer(page, many=True, context={'request': request})
+                return self.get_paginated_response(serializer.data)
+            
+            serializer = ProjectExpenseListSerializer(expenses, many=True, context={'request': request})
+            return Response(serializer.data)
+        
+        elif request.method == 'POST':
+            # Create new expense
+            data = request.data.copy()
+            data['project'] = project.id
+            
+            serializer = ProjectExpenseSerializer(data=data, context={'request': request})
+            if serializer.is_valid():
+                serializer.save(created_by=request.user)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['get'])
+    def expense_summary(self, request, pk=None):
+        """Get expense summary for a project"""
+        project = self.get_object()
+        
+        # Calculate totals
+        expenses = project.expenses.all()
+        total_expenses = expenses.aggregate(
+            total=Sum('total_amount')
+        )['total'] or 0
+        
+        pending_expenses = expenses.filter(status='pending').aggregate(
+            total=Sum('total_amount')
+        )['total'] or 0
+        
+        # Category breakdown
+        category_breakdown = expenses.filter(status__in=['approved', 'paid']).values(
+            'category__name'
+        ).annotate(
+            total=Sum('total_amount'),
+            count=Count('id')
+        ).order_by('-total')
+        
+        # Recent expenses
+        recent_expenses = expenses.order_by('-created_at')[:5]
+        
+        return Response({
+            'project_id': project.id,
+            'project_name': project.name,
+            'total_expenses': float(total_expenses),
+            'pending_expenses': float(pending_expenses),
+            'expenses_count': expenses.count(),
+            'category_breakdown': list(category_breakdown),
+            'recent_expenses': ProjectExpenseListSerializer(recent_expenses, many=True).data,
+            'currency': project.currency,
+        })
+    
+    @action(detail=True, methods=['get'])
+    def expense_categories(self, request, pk=None):
+        """Get expense categories with project-specific totals"""
+        project = self.get_object()
+        categories = ProjectExpenseCategory.objects.filter(is_active=True)
+        
+        serializer = ProjectExpenseCategorySerializer(
+            categories, 
+            many=True, 
+            context={'request': request, 'project': project}
+        )
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['post'])
+    def from_quotation(self, request):
+        """Create a project from an approved quotation"""
+        quotation_id = request.data.get('quotation_id')
+        
+        if not quotation_id:
+            return Response(
+                {'error': 'quotation_id is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            quotation = get_object_or_404(Quotation, id=quotation_id, status='approved')
+        except Quotation.DoesNotExist:
+            return Response(
+                {'error': 'Approved quotation not found'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Check if quotation already has a project
+        if quotation.project:
+            return Response(
+                {'error': 'A project already exists for this quotation', 'project_id': quotation.project.id}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Generate project number
+        from .models import NumberSequence
+        project_number = NumberSequence.get_next_number('project', timezone.now().date())
+        
+        # Create project from quotation
+        project_data = {
+            'name': f"Project for {quotation.client.name} - {quotation.number}",
+            'project_number': project_number,
+            'client': quotation.client.id,
+            'description': quotation.description or f"Project created from quotation {quotation.number}",
+            'start_date': timezone.now().date(),
+            'project_type': 'service',  # Default type, can be customized
+            'status': 'planning',
+            'priority': 'medium',
+            'budget': str(quotation.total_amount) if hasattr(quotation, 'total_amount') else '0',
+            'currency': quotation.currency,
+            'project_manager': request.user.id,
+            'created_by': request.user.id
+        }
+        
+        # Create project using serializer
+        serializer = ProjectCreateUpdateSerializer(data=project_data, context={'request': request})
+        if serializer.is_valid():
+            project = serializer.save(created_by=request.user)
+            
+            # Link quotation to project
+            quotation.project = project
+            quotation.save()
+            
+            # Log activity
+            from .models import ActivityLog
+            ActivityLog.objects.create(
+                user=request.user,
+                action='create_from_quotation',
+                content_type='project',
+                object_id=project.id,
+                description=f'Created project {project.project_number} from quotation {quotation.number}'
+            )
+            
+            # Return project details
+            project_serializer = ProjectDetailSerializer(project, context={'request': request})
+            return Response(project_serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProjectAssignmentViewSet(viewsets.ModelViewSet):
@@ -477,4 +657,315 @@ class ProjectAnalyticsViewSet(viewsets.ViewSet):
                 'total_profitability': sum(p['profitability'] for p in project_performance),
                 'average_profit_margin': sum(p['profit_margin'] for p in project_performance) / len(project_performance) if project_performance else 0,
             }
+        })
+
+
+class ProjectExpenseCategoryViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing project expense categories"""
+    queryset = ProjectExpenseCategory.objects.filter(is_active=True)
+    serializer_class = ProjectExpenseCategorySerializer
+    permission_classes = [permissions.IsAuthenticated, RoleBasedPermission]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['is_predefined', 'parent_category']
+    search_fields = ['name', 'description']
+    ordering_fields = ['name', 'created_at']
+    ordering = ['name']
+    
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+    
+    @action(detail=False, methods=['post'])
+    def create_defaults(self, request):
+        """Create default expense categories"""
+        created_categories = ProjectExpenseCategory.get_default_categories()
+        serializer = self.get_serializer(created_categories, many=True)
+        return Response({
+            'message': f'Created {len(created_categories)} default categories',
+            'categories': serializer.data
+        }, status=status.HTTP_201_CREATED)
+
+
+class ProjectExpenseViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing project expenses"""
+    queryset = ProjectExpense.objects.all()
+    permission_classes = [permissions.IsAuthenticated, RoleBasedPermission]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['project', 'category', 'status', 'payment_method', 'created_by']
+    search_fields = ['description', 'subcategory', 'vendor_name', 'invoice_reference', 'expense_number']
+    ordering_fields = ['expense_date', 'amount', 'total_amount', 'created_at']
+    ordering = ['-expense_date', '-created_at']
+    
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return ProjectExpenseListSerializer
+        return ProjectExpenseSerializer
+    
+    def get_queryset(self):
+        """Filter expenses based on user permissions and project access"""
+        user = self.request.user
+        queryset = ProjectExpense.objects.all()
+        
+        # Filter by project if specified
+        project_id = self.request.query_params.get('project')
+        if project_id:
+            queryset = queryset.filter(project_id=project_id)
+        
+        # Apply user-based filtering
+        if user.role not in ['admin', 'accountant']:
+            # Users can only see expenses from projects they're associated with
+            accessible_projects = Project.objects.filter(
+                Q(assigned_users=user) | Q(project_manager=user) | Q(created_by=user)
+            ).distinct()
+            queryset = queryset.filter(project__in=accessible_projects)
+        
+        return queryset
+    
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+    
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """Approve an expense"""
+        expense = self.get_object()
+        
+        # Check if user has permission to approve
+        if request.user.role not in ['admin', 'accountant']:
+            return Response(
+                {'error': 'You do not have permission to approve expenses'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        if expense.status != 'pending':
+            return Response(
+                {'error': f'Cannot approve expense with status: {expense.status}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        expense.approve(request.user)
+        serializer = self.get_serializer(expense)
+        return Response({
+            'message': 'Expense approved successfully',
+            'expense': serializer.data
+        })
+    
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        """Reject an expense"""
+        expense = self.get_object()
+        
+        # Check if user has permission to reject
+        if request.user.role not in ['admin', 'accountant']:
+            return Response(
+                {'error': 'You do not have permission to reject expenses'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        if expense.status != 'pending':
+            return Response(
+                {'error': f'Cannot reject expense with status: {expense.status}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        expense.reject()
+        serializer = self.get_serializer(expense)
+        return Response({
+            'message': 'Expense rejected',
+            'expense': serializer.data
+        })
+    
+    @action(detail=True, methods=['post'])
+    def mark_paid(self, request, pk=None):
+        """Mark an expense as paid"""
+        expense = self.get_object()
+        payment_date = request.data.get('payment_date')
+        
+        # Check if user has permission
+        if request.user.role not in ['admin', 'accountant']:
+            return Response(
+                {'error': 'You do not have permission to mark expenses as paid'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        if expense.status != 'approved':
+            return Response(
+                {'error': 'Only approved expenses can be marked as paid'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            if payment_date:
+                from datetime import datetime
+                payment_date = datetime.strptime(payment_date, '%Y-%m-%d').date()
+            expense.mark_as_paid(payment_date)
+            
+            serializer = self.get_serializer(expense)
+            return Response({
+                'message': 'Expense marked as paid',
+                'expense': serializer.data
+            })
+        except ValueError:
+            return Response(
+                {'error': 'Invalid payment date format. Use YYYY-MM-DD'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=False, methods=['get'])
+    def summary(self, request):
+        """Get expense summary for a project or all projects"""
+        project_id = request.query_params.get('project')
+        
+        if project_id:
+            try:
+                project = Project.objects.get(id=project_id)
+                
+                # Check access permissions
+                user = request.user
+                if user.role not in ['admin', 'accountant']:
+                    accessible_projects = Project.objects.filter(
+                        Q(assigned_users=user) | Q(project_manager=user) | Q(created_by=user)
+                    ).distinct()
+                    if project not in accessible_projects:
+                        return Response(
+                            {'error': 'You do not have access to this project'},
+                            status=status.HTTP_403_FORBIDDEN
+                        )
+                
+                # Get expenses for the project
+                expenses = project.expenses.all()
+                
+                # Calculate totals
+                total_expenses = expenses.aggregate(
+                    total=Sum('total_amount')
+                )['total'] or 0
+                
+                total_pending = expenses.filter(status='pending').aggregate(
+                    total=Sum('total_amount')
+                )['total'] or 0
+                
+                total_approved = expenses.filter(status='approved').aggregate(
+                    total=Sum('total_amount')
+                )['total'] or 0
+                
+                total_paid = expenses.filter(status='paid').aggregate(
+                    total=Sum('total_amount')
+                )['total'] or 0
+                
+                # Get category breakdown
+                expenses_by_category = expenses.filter(status__in=['approved', 'paid']).values(
+                    'category__name'
+                ).annotate(
+                    total=Sum('total_amount'),
+                    count=Count('id')
+                ).order_by('-total')
+                
+                # Get top categories
+                top_categories = list(expenses_by_category[:5])
+                
+                # Get recent expenses
+                recent_expenses = expenses.order_by('-created_at')[:10]
+                
+                # Get currency info
+                currency = project.currency
+                currency_symbol = next(
+                    (symbol for code, name, symbol in getattr(settings, 'CURRENCY_CHOICES', []) if code == currency),
+                    currency
+                )
+                
+                summary_data = {
+                    'project_id': project.id,
+                    'project_name': project.name,
+                    'total_expenses': total_expenses,
+                    'total_pending': total_pending,
+                    'total_approved': total_approved,
+                    'total_paid': total_paid,
+                    'expenses_count': expenses.count(),
+                    'pending_count': expenses.filter(status='pending').count(),
+                    'approved_count': expenses.filter(status='approved').count(),
+                    'paid_count': expenses.filter(status='paid').count(),
+                    'expenses_by_category': list(expenses_by_category),
+                    'top_categories': top_categories,
+                    'recent_expenses': ProjectExpenseListSerializer(recent_expenses, many=True).data,
+                    'currency': currency,
+                    'currency_symbol': currency_symbol,
+                }
+                
+                serializer = ProjectExpenseSummarySerializer(summary_data)
+                return Response(serializer.data)
+                
+            except Project.DoesNotExist:
+                return Response(
+                    {'error': 'Project not found'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            return Response(
+                {'error': 'Project ID is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=False, methods=['get'])
+    def analytics(self, request):
+        """Get expense analytics across projects"""
+        user = request.user
+        
+        # Get accessible projects based on user role
+        if user.role in ['admin', 'accountant']:
+            projects = Project.objects.all()
+        else:
+            projects = Project.objects.filter(
+                Q(assigned_users=user) | Q(project_manager=user) | Q(created_by=user)
+            ).distinct()
+        
+        # Get all expenses from accessible projects
+        expenses = ProjectExpense.objects.filter(project__in=projects)
+        
+        # Calculate overall statistics
+        total_expenses = expenses.aggregate(
+            total=Sum('total_amount')
+        )['total'] or 0
+        
+        pending_expenses = expenses.filter(status='pending').aggregate(
+            total=Sum('total_amount')
+        )['total'] or 0
+        
+        # Expenses by category across all projects
+        category_breakdown = expenses.filter(status__in=['approved', 'paid']).values(
+            'category__name'
+        ).annotate(
+            total=Sum('total_amount'),
+            count=Count('id')
+        ).order_by('-total')
+        
+        # Monthly expense trend (last 12 months)
+        from datetime import datetime, timedelta
+        twelve_months_ago = datetime.now().date() - timedelta(days=365)
+        
+        monthly_expenses = expenses.filter(
+            expense_date__gte=twelve_months_ago,
+            status__in=['approved', 'paid']
+        ).extra(
+            select={'month': 'strftime("%%Y-%%m", expense_date)'}
+        ).values('month').annotate(
+            total=Sum('total_amount'),
+            count=Count('id')
+        ).order_by('month')
+        
+        # Top spending projects
+        project_expenses = expenses.filter(status__in=['approved', 'paid']).values(
+            'project__name', 'project__project_number'
+        ).annotate(
+            total=Sum('total_amount'),
+            count=Count('id')
+        ).order_by('-total')[:10]
+        
+        return Response({
+            'summary': {
+                'total_expenses': float(total_expenses),
+                'pending_expenses': float(pending_expenses),
+                'total_projects': projects.count(),
+                'expenses_count': expenses.count(),
+            },
+            'category_breakdown': list(category_breakdown),
+            'monthly_trend': list(monthly_expenses),
+            'top_projects': list(project_expenses),
         })

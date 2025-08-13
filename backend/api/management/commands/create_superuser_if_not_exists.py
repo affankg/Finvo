@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-import os
+from decouple import config
 
 User = get_user_model()
 
@@ -9,9 +9,9 @@ class Command(BaseCommand):
     help = 'Create a superuser for production deployment'
 
     def handle(self, *args, **options):
-        username = os.getenv('DJANGO_SUPERUSER_USERNAME', 'admin')
-        email = os.getenv('DJANGO_SUPERUSER_EMAIL', 'admin@example.com')
-        password = os.getenv('DJANGO_SUPERUSER_PASSWORD', 'admin123')
+        username = config('DJANGO_SUPERUSER_USERNAME', default='admin')
+        email = config('DJANGO_SUPERUSER_EMAIL', default='admin@example.com')
+        password = config('DJANGO_SUPERUSER_PASSWORD', default='admin123')
 
         try:
             if not User.objects.filter(username=username).exists():

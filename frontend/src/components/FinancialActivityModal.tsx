@@ -146,10 +146,10 @@ const FinancialActivityModal: React.FC<FinancialActivityModalProps> = ({
       const headers = { Authorization: `Bearer ${token}` };
 
       const [clientsRes, accountsRes, quotationsRes, invoicesRes] = await Promise.all([
-        axios.get('http://127.0.0.1:8000/api/clients/', { headers }),
-        axios.get('http://127.0.0.1:8000/api/financial-accounts/', { headers }),
-        axios.get('http://127.0.0.1:8000/api/quotations/', { headers }),
-        axios.get('http://127.0.0.1:8000/api/invoices/', { headers }),
+        axios.get('http://192.168.100.113:8000/api/clients/', { headers }),
+        axios.get('http://192.168.100.113:8000/api/financial-accounts/', { headers }),
+        axios.get('http://192.168.100.113:8000/api/quotations/', { headers }),
+        axios.get('http://192.168.100.113:8000/api/invoices/', { headers }),
       ]);
 
       setClients(clientsRes.data.results || clientsRes.data);
@@ -185,10 +185,10 @@ const FinancialActivityModal: React.FC<FinancialActivityModalProps> = ({
       };
 
       if (editActivity) {
-        await axios.patch(`http://127.0.0.1:8000/api/financial-activities/${editActivity.id}/`, submitData, { headers });
+        await axios.patch(`http://192.168.100.113:8000/api/financial-activities/${editActivity.id}/`, submitData, { headers });
         toast.success('Financial activity updated successfully');
       } else {
-        await axios.post('http://127.0.0.1:8000/api/financial-activities/', submitData, { headers });
+        await axios.post('http://192.168.100.113:8000/api/financial-activities/', submitData, { headers });
         toast.success('Financial activity created successfully');
       }
 

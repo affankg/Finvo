@@ -28,15 +28,30 @@ from .utils import generate_pdf, send_email_with_pdf
 # Authentication Views
 class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
+        # Add debug logging
+        print(f"Login attempt for username: {request.data.get('username')}")
+        
         # Use default JWT authentication
         response = super().post(request, *args, **kwargs)
         
-        # If authentication successful, log the activity
+        # If authentication successful, add user data and log the activity
         if response.status_code == 200:
             username = request.data.get('username')
             password = request.data.get('password')
             user = authenticate(username=username, password=password)
             if user:
+                # Add user data to response
+                response.data['user'] = {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'role': user.role,
+                    'is_active': user.is_active,
+                }
+                
+                # Log the activity
                 ActivityLog.objects.create(
                     user=user,
                     action='login',
@@ -44,6 +59,10 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                     object_id=user.id,
                     description=f'User {user.username} logged in'
                 )
+                print(f"Login successful for user: {user.username}")
+        else:
+            print(f"Login failed with status code: {response.status_code}")
+            print(f"Response data: {response.data}")
         
         return response
 

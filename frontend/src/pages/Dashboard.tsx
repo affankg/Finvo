@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { dashboardAPI, projectsAPI, DashboardStats, ActivityLog } from '../services/api';
@@ -188,7 +189,7 @@ const Dashboard: React.FC = () => {
     {
       label: 'Create Project',
       icon: <Icons.Building />,
-      action: () => window.location.href = '/projects',
+      action: () => window.location.href = '/projects?create=true',
       color: 'purple' as const
     },
     {
@@ -223,7 +224,7 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="p-6">
+    <div className="dashboard-container p-6">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between">
@@ -713,9 +714,66 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Enhanced CSS animations for quick action cards */}
+      {/* Enhanced CSS animations for quick action cards and global scrollbar */}
       <style dangerouslySetInnerHTML={{
         __html: `
+          /* Enhanced Purple Scrollbar for entire app */
+          html, body, *, *::before, *::after {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(139, 92, 246, 0.8) rgba(139, 92, 246, 0.1);
+          }
+          
+          ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+          }
+          
+          ::-webkit-scrollbar-track {
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 6px;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            box-shadow: inset 0 0 6px rgba(139, 92, 246, 0.1);
+          }
+          
+          ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, 
+              rgba(139, 92, 246, 0.8) 0%, 
+              rgba(124, 58, 237, 0.9) 50%, 
+              rgba(109, 40, 217, 0.95) 100%
+            );
+            border-radius: 6px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 
+              0 2px 4px rgba(139, 92, 246, 0.3),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+          }
+          
+          ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, 
+              rgba(139, 92, 246, 1) 0%, 
+              rgba(124, 58, 237, 1) 50%, 
+              rgba(109, 40, 217, 1) 100%
+            );
+            box-shadow: 
+              0 4px 8px rgba(139, 92, 246, 0.4),
+              inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+          }
+          
+          ::-webkit-scrollbar-thumb:active {
+            background: linear-gradient(180deg, 
+              rgba(124, 58, 237, 1) 0%, 
+              rgba(109, 40, 217, 1) 50%, 
+              rgba(91, 33, 182, 1) 100%
+            );
+            transform: scale(0.95);
+          }
+          
+          ::-webkit-scrollbar-corner {
+            background: rgba(139, 92, 246, 0.1);
+          }
+          
           @keyframes shimmer {
             0% {
               transform: translateX(-100%) skewX(-12deg);

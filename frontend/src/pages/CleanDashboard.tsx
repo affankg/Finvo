@@ -213,7 +213,7 @@ const CleanDashboard: React.FC = () => {
     {
       label: 'Create Project',
       icon: <Icons.Project />,
-      action: () => window.location.href = '/projects',
+      action: () => window.location.href = '/projects?create=true',
       color: 'bg-purple-500 hover:bg-purple-600',
       description: 'Start new project'
     },

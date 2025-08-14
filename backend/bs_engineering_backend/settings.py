@@ -184,6 +184,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://192.168.100.113:3004",
     "http://192.168.100.113:3000",
     "http://192.168.100.113:5173",
+    # Add your current network IP for Vite frontend
+    "http://192.168.0.158:5173",
+    "http://192.168.0.158:3000",
 ]
 
 # Add production frontend URL when deploying

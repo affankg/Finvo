@@ -434,21 +434,21 @@ class ProjectService {
   }
 
   async approveExpense(expenseId: number) {
-    const response = await axios.patch(`${API_BASE_URL}/project-expenses/${expenseId}/approve/`, {}, {
+    const response = await axios.post(`${API_BASE_URL}/project-expenses/${expenseId}/approve/`, {}, {
       headers: this.getAuthHeaders(),
     });
     return response.data;
   }
 
   async rejectExpense(expenseId: number) {
-    const response = await axios.patch(`${API_BASE_URL}/project-expenses/${expenseId}/reject/`, {}, {
+    const response = await axios.post(`${API_BASE_URL}/project-expenses/${expenseId}/reject/`, {}, {
       headers: this.getAuthHeaders(),
     });
     return response.data;
   }
 
   async markExpensePaid(expenseId: number) {
-    const response = await axios.patch(`${API_BASE_URL}/project-expenses/${expenseId}/mark-paid/`, {}, {
+    const response = await axios.post(`${API_BASE_URL}/project-expenses/${expenseId}/mark_paid/`, {}, {
       headers: this.getAuthHeaders(),
     });
     return response.data;

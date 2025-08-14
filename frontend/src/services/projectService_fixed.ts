@@ -16,7 +16,7 @@ export interface Project {
   location: string;
   budget: string;
   currency: string;
-  project_manager: number;
+  project_manager: number | null;
   project_manager_name?: string;
   created_by: number;
   created_by_name?: string;

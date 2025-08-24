@@ -1,5 +1,5 @@
 import React from 'react';
-import { LOGO_CONFIG, LOGO_PATHS } from '../config/logoConfig';
+import { LOGO_CONFIG } from '../config/logoConfig';
 import newLogo from '../assets/images/Businessosllution-01.svg';
 import fallbackLogoSvg from '../assets/images/bs-engineering-logo.svg';
 
@@ -25,8 +25,8 @@ const Logo: React.FC<LogoProps> = ({
   const configKey = variant.toUpperCase() as 'LOGIN' | 'NAVBAR' | 'DASHBOARD';
   const config = LOGO_CONFIG[configKey];
   
-  // Skip PDF config as it's not for display
-  if ('maxWidth' in config) {
+  // Ensure we have a valid config
+  if (!config) {
     return null;
   }
   
@@ -42,8 +42,7 @@ const Logo: React.FC<LogoProps> = ({
       className={logoClassName}
       style={{
         ...style,
-        imageRendering: 'crisp-edges',
-        msInterpolationMode: 'bicubic' as any
+        imageRendering: 'crisp-edges'
       }}
       onError={(e) => {
         // Fallback to SVG logo if new PNG fails

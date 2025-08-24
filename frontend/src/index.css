@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import custom scrollbar styles */
+@import './styles/scrollbar.css';
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -15,6 +18,63 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Enhanced Purple Scrollbar for entire app - Global Implementation */
+html, body, *, *::before, *::after {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(139, 92, 246, 0.8) rgba(139, 92, 246, 0.1) !important;
+}
+
+::-webkit-scrollbar {
+  width: 12px !important;
+  height: 12px !important;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(139, 92, 246, 0.1) !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(139, 92, 246, 0.2) !important;
+  box-shadow: inset 0 0 6px rgba(139, 92, 246, 0.1) !important;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, 
+    rgba(139, 92, 246, 0.8) 0%, 
+    rgba(124, 58, 237, 0.9) 50%, 
+    rgba(109, 40, 217, 0.95) 100%
+  ) !important;
+  border-radius: 6px !important;
+  border: 2px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 
+    0 2px 4px rgba(139, 92, 246, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  transition: all 0.3s ease !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, 
+    rgba(139, 92, 246, 1) 0%, 
+    rgba(124, 58, 237, 1) 50%, 
+    rgba(109, 40, 217, 1) 100%
+  ) !important;
+  box-shadow: 
+    0 4px 8px rgba(139, 92, 246, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+  transform: scale(1.05) !important;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, 
+    rgba(124, 58, 237, 1) 0%, 
+    rgba(109, 40, 217, 1) 50%, 
+    rgba(91, 33, 182, 1) 100%
+  ) !important;
+  transform: scale(0.95) !important;
+}
+
+::-webkit-scrollbar-corner {
+  background: rgba(139, 92, 246, 0.1) !important;
+}
+
 body {
   margin: 0;
   min-width: 320px;
@@ -26,6 +86,26 @@ body {
   min-height: 100vh;
 }
 
+/* Performance optimizations */
+* {
+  box-sizing: border-box;
+}
+
+/* Reduce repaints */
+.animate-spin {
+  will-change: transform;
+}
+
+/* CSS containment for better performance */
+.page-container {
+  contain: layout style paint;
+}
+
+/* Optimize font loading */
+.font-inter {
+  font-display: swap;
+}
+
 /* Custom logo enhancements */
 .logo-sharp {
   image-rendering: crisp-edges;
@@ -33,6 +113,25 @@ body {
   image-rendering: -moz-crisp-edges;
   image-rendering: pixelated;
   -ms-interpolation-mode: bicubic;
+}
+
+/* NEW: Balanced prominent logo styles */
+.logo-clean {
+  filter: brightness(1.15) contrast(1.1) saturate(1.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: block !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain;
+  image-rendering: auto;
+  background: none !important;
+  border: none !important;
+  backdrop-filter: none !important;
+}
+
+.logo-clean:hover {
+  filter: brightness(1.25) contrast(1.15) saturate(1.15);
+  transform: scale(1.05);
 }
 
 .logo-enhanced {

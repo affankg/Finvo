@@ -154,13 +154,45 @@ class Project(models.Model):
     
     @property
     def total_expenses_amount(self):
-        """Total expenses linked to this project"""
-        from .financial_models import FinancialActivity
-        expenses = FinancialActivity.objects.filter(
-            project=self,
-            activity_type='expense'
-        )
-        return sum(exp.amount for exp in expenses)
+        """Total approved/paid expenses from ProjectExpense model"""
+        return self.expenses.filter(status__in=['approved', 'paid']).aggregate(
+            total=models.Sum('total_amount')
+        )['total'] or Decimal('0')
+    
+    @property
+    def all_expenses_amount(self):
+        """Total of all expenses regardless of status"""
+        return self.expenses.aggregate(
+            total=models.Sum('total_amount')
+        )['total'] or Decimal('0')
+    
+    @property
+    def total_expenses_by_category(self):
+        """Get expenses grouped by category"""
+        from django.db.models import Sum
+        return self.expenses.filter(status__in=['approved', 'paid']).values(
+            'category__name'
+        ).annotate(
+            total=Sum('total_amount'),
+            count=models.Count('id')
+        ).order_by('-total')
+    
+    @property
+    def pending_expenses_amount(self):
+        """Total pending expenses"""
+        return self.expenses.filter(status='pending').aggregate(
+            total=models.Sum('total_amount')
+        )['total'] or Decimal('0')
+    
+    @property
+    def expenses_count(self):
+        """Count of all expenses"""
+        return self.expenses.count()
+    
+    @property
+    def approved_expenses_count(self):
+        """Count of approved expenses"""
+        return self.expenses.filter(status__in=['approved', 'paid']).count()
     
     @property
     def total_revenue(self):
@@ -322,3 +354,202 @@ class ProjectNote(models.Model):
     
     def __str__(self):
         return f"{self.project.name} - {self.title or 'Note'} ({self.created_at.strftime('%Y-%m-%d')})"
+
+
+class ProjectExpenseCategory(models.Model):
+    """Predefined and custom expense categories for projects"""
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    is_predefined = models.BooleanField(default=False, help_text="System predefined category")
+    is_active = models.BooleanField(default=True)
+    parent_category = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='subcategories')
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['name']
+        verbose_name_plural = "Project Expense Categories"
+    
+    def __str__(self):
+        return self.name
+    
+    @classmethod
+    def get_default_categories(cls):
+        """Create default expense categories if they don't exist"""
+        defaults = [
+            ('Labour', 'Direct labour costs including wages, overtime, and benefits'),
+            ('Material', 'Raw materials, supplies, and consumables'),
+            ('Equipment', 'Equipment rental, purchase, and maintenance'),
+            ('Transport', 'Transportation, logistics, and delivery costs'),
+            ('Subcontractor', 'Subcontractor and third-party service costs'),
+            ('Utilities', 'Electricity, water, gas, and other utilities'),
+            ('Administrative', 'Office expenses, communication, and administrative costs'),
+            ('Professional Services', 'Consulting, legal, and professional service fees'),
+            ('Safety & Compliance', 'Safety equipment, permits, and compliance costs'),
+            ('Miscellaneous', 'Other project-related expenses'),
+        ]
+        
+        created_categories = []
+        for name, description in defaults:
+            category, created = cls.objects.get_or_create(
+                name=name,
+                defaults={
+                    'description': description,
+                    'is_predefined': True,
+                    'is_active': True
+                }
+            )
+            if created:
+                created_categories.append(category)
+        
+        return created_categories
+
+
+class ProjectExpense(models.Model):
+    """Detailed expense tracking for projects"""
+    PAYMENT_METHODS = (
+        ('cash', 'Cash'),
+        ('cheque', 'Cheque'),
+        ('bank_transfer', 'Bank Transfer'),
+        ('credit_card', 'Credit Card'),
+        ('digital_wallet', 'Digital Wallet'),
+        ('other', 'Other'),
+    )
+    
+    STATUS_CHOICES = (
+        ('pending', 'Pending Approval'),
+        ('approved', 'Approved'),
+        ('paid', 'Paid'),
+        ('rejected', 'Rejected'),
+    )
+    
+    # Core fields
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='expenses')
+    expense_number = models.CharField(max_length=50, unique=True, blank=True)
+    
+    # Expense details
+    category = models.ForeignKey(ProjectExpenseCategory, on_delete=models.CASCADE, related_name='expenses')
+    subcategory = models.CharField(max_length=200, blank=True, help_text="Sub-category or specific description")
+    description = models.TextField(help_text="Detailed description of the expense")
+    
+    # Financial details
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    currency = models.CharField(
+        max_length=10,
+        choices=[(code, code) for code, name, symbol in getattr(settings, 'CURRENCY_CHOICES', [('PKR', 'Pakistani Rupee', 'Rs')])],
+        default=getattr(settings, 'DEFAULT_CURRENCY', 'PKR')
+    )
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default='bank_transfer')
+    
+    # Dates
+    expense_date = models.DateField(help_text="Date when the expense was incurred")
+    payment_date = models.DateField(null=True, blank=True, help_text="Date when payment was made")
+    
+    # Vendor/Supplier information
+    vendor_name = models.CharField(max_length=200, blank=True, help_text="Vendor or supplier name")
+    vendor_contact = models.CharField(max_length=100, blank=True, help_text="Vendor contact information")
+    invoice_reference = models.CharField(max_length=100, blank=True, help_text="Vendor invoice number")
+    
+    # Status and approval
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    approved_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='approved_expenses'
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
+    
+    # Additional information
+    notes = models.TextField(blank=True, help_text="Additional notes or remarks")
+    attachment = models.FileField(
+        upload_to='project_expense_attachments/%Y/%m/',
+        null=True,
+        blank=True,
+        help_text="Receipt, invoice, or supporting document"
+    )
+    attachment_name = models.CharField(max_length=200, blank=True)
+    
+    # Tax information
+    tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Tax rate percentage")
+    tax_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    total_amount = models.DecimalField(max_digits=15, decimal_places=2, help_text="Amount including tax")
+    
+    # Metadata
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_expenses')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-expense_date', '-created_at']
+        indexes = [
+            models.Index(fields=['project', 'expense_date']),
+            models.Index(fields=['category']),
+            models.Index(fields=['status']),
+            models.Index(fields=['expense_number']),
+        ]
+    
+    def __str__(self):
+        return f"{self.expense_number} - {self.project.name} - {self.category.name} - {self.amount}"
+    
+    def save(self, *args, **kwargs):
+        """Auto-generate expense number and calculate totals"""
+        if not self.expense_number:
+            # Generate expense number: EXP-PROJ-YYYY-NNNN
+            year = self.expense_date.year if self.expense_date else timezone.now().year
+            project_code = self.project.project_number.replace('PROJ-', '') if self.project.project_number else 'UNKN'
+            last_expense = ProjectExpense.objects.filter(
+                project=self.project,
+                expense_number__startswith=f'EXP-{project_code}-{year}-'
+            ).order_by('expense_number').last()
+            
+            if last_expense:
+                last_num = int(last_expense.expense_number.split('-')[-1])
+                new_num = str(last_num + 1).zfill(4)
+            else:
+                new_num = '0001'
+            
+            self.expense_number = f'EXP-{project_code}-{year}-{new_num}'
+        
+        # Calculate tax amount and total
+        if self.amount and self.tax_rate:
+            self.tax_amount = (self.amount * self.tax_rate) / 100
+        else:
+            self.tax_amount = 0
+        
+        self.total_amount = self.amount + self.tax_amount
+        
+        # Set attachment name if file is provided
+        if self.attachment and not self.attachment_name:
+            self.attachment_name = os.path.basename(self.attachment.name)
+        
+        super().save(*args, **kwargs)
+    
+    @property
+    def is_approved(self):
+        """Check if expense is approved"""
+        return self.status == 'approved'
+    
+    @property
+    def is_paid(self):
+        """Check if expense is paid"""
+        return self.status == 'paid'
+    
+    def approve(self, approved_by_user):
+        """Approve the expense"""
+        self.status = 'approved'
+        self.approved_by = approved_by_user
+        self.approved_at = timezone.now()
+        self.save()
+    
+    def mark_as_paid(self, payment_date=None):
+        """Mark expense as paid"""
+        self.status = 'paid'
+        self.payment_date = payment_date or timezone.now().date()
+        self.save()
+    
+    def reject(self):
+        """Reject the expense"""
+        self.status = 'rejected'
+        self.save()

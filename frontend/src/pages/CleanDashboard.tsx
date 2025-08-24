@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { dashboardAPI, financialAPI } from '../services/api';
+import projectService from '../services/projectService_fixed';
 import { formatCurrency, DEFAULT_CURRENCY } from '../utils/currency';
 
 // Clean Modern Icons
@@ -72,6 +73,26 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
   ),
+  Project: () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+    </svg>
+  ),
+  Chart: () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    </svg>
+  ),
+  Target: () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+    </svg>
+  ),
+  Team: () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  ),
 };
 
 interface DashboardStats {
@@ -96,10 +117,35 @@ interface TodayUpdate {
   priority: 'high' | 'medium' | 'low';
 }
 
+interface ProjectDashboard {
+  id: number;
+  name: string;
+  project_number: string;
+  client_name: string;
+  project_manager_name: string;
+  status: string;
+  priority: string;
+  start_date: string;
+  end_date: string;
+  currency: string;
+  total_budget: number;
+  total_spent: number;
+  total_billed: number;
+  remaining_budget: number;
+  profit_margin: number;
+  progress_percentage: number;
+  milestones_completed: number;
+  milestones_total: number;
+  days_remaining: number;
+  is_overdue: boolean;
+  team_size: number;
+}
+
 const CleanDashboard: React.FC = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({});
   const [todayUpdates, setTodayUpdates] = useState<TodayUpdate[]>([]);
+  const [projects, setProjects] = useState<ProjectDashboard[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -109,12 +155,14 @@ const CleanDashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [dashboardResponse, activitiesResponse] = await Promise.all([
+      const [dashboardResponse, activitiesResponse, projectsResponse] = await Promise.all([
         dashboardAPI.getStats(),
-        financialAPI.getActivities()
+        financialAPI.getActivities(),
+        projectService.getDashboardProjects()
       ]);
 
       setStats(dashboardResponse.data.stats || {});
+      setProjects(projectsResponse.data || []);
       
       // Process today's updates
       const today = new Date().toISOString().split('T')[0];
@@ -163,6 +211,13 @@ const CleanDashboard: React.FC = () => {
       description: 'Generate invoice'
     },
     {
+      label: 'Create Project',
+      icon: <Icons.Project />,
+      action: () => window.location.href = '/projects?create=true',
+      color: 'bg-purple-500 hover:bg-purple-600',
+      description: 'Start new project'
+    },
+    {
       label: 'Add Expense',
       icon: <Icons.Money />,
       action: () => window.location.href = '/financial-activities',
@@ -197,6 +252,33 @@ const CleanDashboard: React.FC = () => {
     if (status === 'paid' || status === 'completed') return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
     if (status === 'pending') return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
     return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+  };
+
+  const getProjectStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'completed': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      case 'active': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'on_hold': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'cancelled': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+    }
+  };
+
+  const getProjectPriorityColor = (priority: string) => {
+    switch (priority?.toLowerCase()) {
+      case 'high': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+      case 'medium': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'low': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+    }
+  };
+
+  const getProgressColor = (percentage: number) => {
+    if (percentage >= 90) return 'bg-green-500';
+    if (percentage >= 70) return 'bg-blue-500';
+    if (percentage >= 50) return 'bg-yellow-500';
+    if (percentage >= 30) return 'bg-orange-500';
+    return 'bg-red-500';
   };
 
   const getTypeIcon = (type: string) => {
@@ -282,6 +364,7 @@ const CleanDashboard: React.FC = () => {
                     card-hover-animation
                     ${action.label === 'New Quotation' ? 'bg-gradient-to-br from-green-50/80 via-green-100/60 to-green-200/40 border-green-200/60 dark:from-green-900/30 dark:via-green-800/20 dark:to-green-700/10 dark:border-green-700/50 text-green-700 dark:text-green-300 hover:from-green-500/30 hover:via-green-600/25 hover:to-green-700/20 hover:shadow-green-500/30 hover:border-green-300/80 dark:hover:from-green-500/40 dark:hover:via-green-600/30 dark:hover:to-green-700/20' : 
                       action.label === 'New Invoice' ? 'bg-gradient-to-br from-green-50/80 via-green-100/60 to-green-200/40 border-green-200/60 dark:from-green-900/30 dark:via-green-800/20 dark:to-green-700/10 dark:border-green-700/50 text-green-700 dark:text-green-300 hover:from-green-500/30 hover:via-green-600/25 hover:to-green-700/20 hover:shadow-green-500/30 hover:border-green-300/80 dark:hover:from-green-500/40 dark:hover:via-green-600/30 dark:hover:to-green-700/20' :
+                      action.label === 'Create Project' ? 'bg-gradient-to-br from-teal-50/80 via-teal-100/60 to-teal-200/40 border-teal-200/60 dark:from-teal-900/30 dark:via-teal-800/20 dark:to-teal-700/10 dark:border-teal-700/50 text-teal-700 dark:text-teal-300 hover:from-teal-500/30 hover:via-teal-600/25 hover:to-teal-700/20 hover:shadow-teal-500/30 hover:border-teal-300/80 dark:hover:from-teal-500/40 dark:hover:via-teal-600/30 dark:hover:to-teal-700/20' :
                       action.label === 'Add Expense' ? 'bg-gradient-to-br from-purple-50/80 via-purple-100/60 to-purple-200/40 border-purple-200/60 dark:from-purple-900/30 dark:via-purple-800/20 dark:to-purple-700/10 dark:border-purple-700/50 text-purple-700 dark:text-purple-300 hover:from-purple-500/30 hover:via-purple-600/25 hover:to-purple-700/20 hover:shadow-purple-500/30 hover:border-purple-300/80 dark:hover:from-purple-500/40 dark:hover:via-purple-600/30 dark:hover:to-purple-700/20' :
                       action.label === 'Add Client' ? 'bg-gradient-to-br from-indigo-50/80 via-indigo-100/60 to-indigo-200/40 border-indigo-200/60 dark:from-indigo-900/30 dark:via-indigo-800/20 dark:to-indigo-700/10 dark:border-indigo-700/50 text-indigo-700 dark:text-indigo-300 hover:from-indigo-500/30 hover:via-indigo-600/25 hover:to-indigo-700/20 hover:shadow-indigo-500/30 hover:border-indigo-300/80 dark:hover:from-indigo-500/40 dark:hover:via-indigo-600/30 dark:hover:to-indigo-700/20' :
                       action.label === 'View Analytics' ? 'bg-gradient-to-br from-orange-50/80 via-orange-100/60 to-orange-200/40 border-orange-200/60 dark:from-orange-900/30 dark:via-orange-800/20 dark:to-orange-700/10 dark:border-orange-700/50 text-orange-700 dark:text-orange-300 hover:from-orange-500/30 hover:via-orange-600/25 hover:to-orange-700/20 hover:shadow-orange-500/30 hover:border-orange-300/80 dark:hover:from-orange-500/40 dark:hover:via-orange-600/30 dark:hover:to-orange-700/20' :
@@ -310,6 +393,7 @@ const CleanDashboard: React.FC = () => {
                     transition-all duration-500 ease-out blur-xl
                     ${action.label === 'New Quotation' ? 'bg-green-500/20' :
                       action.label === 'New Invoice' ? 'bg-green-500/20' :
+                      action.label === 'Create Project' ? 'bg-teal-500/20' :
                       action.label === 'Add Expense' ? 'bg-purple-500/20' :
                       action.label === 'Add Client' ? 'bg-indigo-500/20' :
                       action.label === 'View Analytics' ? 'bg-orange-500/20' :
@@ -320,6 +404,7 @@ const CleanDashboard: React.FC = () => {
                   <div className={`transform transition-transform duration-300 group-hover:scale-110 group-hover:animate-bounce-light ${
                     action.label === 'New Quotation' ? 'text-green-600 dark:text-green-400' :
                     action.label === 'New Invoice' ? 'text-green-600 dark:text-green-400' :
+                    action.label === 'Create Project' ? 'text-teal-600 dark:text-teal-400' :
                     action.label === 'Add Expense' ? 'text-purple-600 dark:text-purple-400' :
                     action.label === 'Add Client' ? 'text-indigo-600 dark:text-indigo-400' :
                     action.label === 'View Analytics' ? 'text-yellow-600 dark:text-yellow-400' :
@@ -530,6 +615,120 @@ const CleanDashboard: React.FC = () => {
                   <div className="absolute top-2 right-2 w-2 h-2 bg-orange-500 rounded-full opacity-30 group-hover:opacity-60 animate-pulse"></div>
                 </div>
               </div>
+            </div>
+
+            {/* Project Insights Widget */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                <span className="text-xl mr-2">🚀</span>
+                Project Insights
+              </h3>
+              
+              {projects.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-gray-400 dark:text-gray-500 mb-2">
+                    <Icons.Project />
+                  </div>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">No active projects found</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Project Summary Stats */}
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Active Projects</span>
+                        <span className="text-lg font-bold text-blue-800 dark:text-blue-200">
+                          {projects.filter(p => p.status?.toLowerCase() === 'active').length}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-green-700 dark:text-green-300">On Track</span>
+                        <span className="text-lg font-bold text-green-800 dark:text-green-200">
+                          {projects.filter(p => !p.is_overdue).length}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Active Projects List */}
+                  <div className="space-y-3">
+                    {projects
+                      .filter(p => p.status?.toLowerCase() === 'active')
+                      .slice(0, 3)
+                      .map((project) => (
+                        <div key={project.id} className="group relative overflow-hidden p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/30 hover:shadow-md transition-all duration-300">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                {project.name}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {project.client_name}
+                              </p>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getProjectPriorityColor(project.priority)}`}>
+                                {project.priority}
+                              </span>
+                              {project.is_overdue && (
+                                <span className="text-red-500 text-xs">⚠️</span>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Progress Bar */}
+                          <div className="mb-2">
+                            <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+                              <span>Progress</span>
+                              <span>{Math.round(project.progress_percentage)}%</span>
+                            </div>
+                            <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                              <div 
+                                className={`h-2 rounded-full transition-all duration-300 ${getProgressColor(project.progress_percentage)}`}
+                                style={{ width: `${Math.min(project.progress_percentage, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Project Metrics */}
+                          <div className="grid grid-cols-3 gap-2 text-xs">
+                            <div className="text-center">
+                              <div className="font-medium text-gray-900 dark:text-white">
+                                {formatCurrency(project.remaining_budget, project.currency)}
+                              </div>
+                              <div className="text-gray-500 dark:text-gray-400">Budget Left</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-medium text-gray-900 dark:text-white">
+                                {project.team_size}
+                              </div>
+                              <div className="text-gray-500 dark:text-gray-400">Team Size</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-medium text-gray-900 dark:text-white">
+                                {project.days_remaining}d
+                              </div>
+                              <div className="text-gray-500 dark:text-gray-400">Remaining</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+
+                  {/* View All Projects Button */}
+                  {projects.length > 0 && (
+                    <button
+                      onClick={() => window.location.href = '/expense-management'}
+                      className="w-full mt-4 px-4 py-2 text-sm font-medium text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 bg-cyan-50 dark:bg-cyan-900/20 hover:bg-cyan-100 dark:hover:bg-cyan-900/30 rounded-lg border border-cyan-200 dark:border-cyan-700 transition-colors duration-200"
+                    >
+                      View All Projects →
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

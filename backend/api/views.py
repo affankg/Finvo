@@ -19,7 +19,7 @@ from collections import defaultdict
 from .models import Client, Service, Quotation, Invoice, ActivityLog, User, NumberSequence, Interaction, ClientAttachment
 from .serializers import (
     UserSerializer, ClientSerializer, ServiceSerializer,
-    QuotationSerializer, InvoiceSerializer, ActivityLogSerializer, LoginSerializer, NumberSequenceSerializer,
+    QuotationSerializer, InvoiceSerializer, ActivityLogSerializer, NumberSequenceSerializer,
     InteractionSerializer, ClientAttachmentSerializer
 )
 from .permissions import RoleBasedPermission
@@ -28,26 +28,43 @@ from .utils import generate_pdf, send_email_with_pdf
 # Authentication Views
 class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
-        serializer = LoginSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.validated_data['user']
-            refresh = RefreshToken.for_user(user)
-            
-            # Log login activity
-            ActivityLog.objects.create(
-                user=user,
-                action='login',
-                content_type='auth',
-                object_id=user.id,
-                description=f'User {user.username} logged in'
-            )
-            
-            return Response({
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
-                'user': UserSerializer(user).data
-            })
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Add debug logging
+        print(f"Login attempt for username: {request.data.get('username')}")
+        
+        # Use default JWT authentication
+        response = super().post(request, *args, **kwargs)
+        
+        # If authentication successful, add user data and log the activity
+        if response.status_code == 200:
+            username = request.data.get('username')
+            password = request.data.get('password')
+            user = authenticate(username=username, password=password)
+            if user:
+                # Add user data to response
+                response.data['user'] = {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'role': user.role,
+                    'is_active': user.is_active,
+                }
+                
+                # Log the activity
+                ActivityLog.objects.create(
+                    user=user,
+                    action='login',
+                    content_type='auth',
+                    object_id=user.id,
+                    description=f'User {user.username} logged in'
+                )
+                print(f"Login successful for user: {user.username}")
+        else:
+            print(f"Login failed with status code: {response.status_code}")
+            print(f"Response data: {response.data}")
+        
+        return response
 
 @api_view(['POST'])
 def logout_view(request):
@@ -110,32 +127,6 @@ def dashboard_view(request):
 
 from .utils import generate_pdf, send_email_with_pdf
 from .permissions import RoleBasedPermission
-
-# Custom Token View
-class CustomTokenObtainPairView(TokenObtainPairView):
-    permission_classes = [permissions.AllowAny]
-    
-    def post(self, request, *args, **kwargs):
-        serializer = LoginSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.validated_data['user']
-            refresh = RefreshToken.for_user(user)
-            
-            # Log login activity
-            ActivityLog.objects.create(
-                user=user,
-                action='login',
-                content_type='auth',
-                object_id=user.id,
-                description=f'User {user.username} logged in'
-            )
-            
-            return Response({
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
-                'user': UserSerializer(user).data
-            })
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 def logout_view(request):

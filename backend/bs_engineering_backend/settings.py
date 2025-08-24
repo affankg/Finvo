@@ -212,7 +212,7 @@ else:
     # Add production frontend URL when deploying (if DEBUG is False)
     if not DEBUG:
         CORS_ALLOWED_ORIGINS.extend([
-            "https://your-frontend-url.onrender.com",  # replace with actual frontend URL
+            "https://finvo-one.vercel.app",  # Production Vercel frontend
         ])
     # Allow credentials by default (so cookie-based auth would work in dev)
     CORS_ALLOW_CREDENTIALS = True
@@ -231,7 +231,7 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # CSRF trusted origins: allow configuring via environment variable (comma-separated list of origins)
 # Example: CSRF_TRUSTED_ORIGINS=https://finvo-app.fly.dev,https://www.example.com
-raw_csrf_origins = config('CSRF_TRUSTED_ORIGINS', default='')
+raw_csrf_origins = config('CSRF_TRUSTED_ORIGINS', default='https://finvo-one.vercel.app')
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in raw_csrf_origins.split(',') if o.strip()]
 
 # As a fallback when DEBUG is False and no CSRF_TRUSTED_ORIGINS provided, derive from ALLOWED_HOSTS

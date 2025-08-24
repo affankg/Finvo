@@ -4,8 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
+  "dev": "vite",
+  "build": "tsc && vite build",
+  "vercel-build": "cross-env VITE_API_URL=https://finvo-1vyg1q.fly.dev npm run build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
@@ -32,7 +33,8 @@
     "eslint-plugin-react-refresh": "^0.4.3",
     "postcss": "^8.4.27",
     "tailwindcss": "^3.3.3",
-    "typescript": "^5.0.2",
-    "vite": "^4.4.5"
+  "typescript": "^5.0.2",
+  "vite": "^4.4.5",
+  "cross-env": "^7.0.3"
   }
 }

@@ -1,23 +1,6 @@
 {
-  "routes": [
-    {
-      "src": "/assets/(.*)",
-      "dest": "/assets/$1"
-    },
-    {
-      "src": "/manifest.json",
-      "dest": "/manifest.json"
-    },
-    {
-      "src": "/favicon.ico",
-      "dest": "/favicon.ico"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html",
-      "status": 200
-    }
-  ],
-  "cleanUrls": true,
-  "trailingSlash": false
+  "rewrites": [{ 
+    "source": "/(.*)", 
+    "destination": "/index.html" 
+  }]
 }

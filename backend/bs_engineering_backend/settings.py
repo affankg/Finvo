@@ -217,6 +217,14 @@ else:
     # Allow credentials by default (so cookie-based auth would work in dev)
     CORS_ALLOW_CREDENTIALS = True
 
+# Allow overriding CORS origins from an environment variable (comma-separated list)
+# Example: CORS_ALLOWED_ORIGINS_ENV="https://finvo-gt54.vercel.app,https://other.app"
+raw_cors_env = config('CORS_ALLOWED_ORIGINS_ENV', default='')
+if raw_cors_env:
+    cors_list = [o.strip() for o in raw_cors_env.split(',') if o.strip()]
+    if cors_list:
+        CORS_ALLOWED_ORIGINS = cors_list
+
 # If the app is running behind a proxy (like Fly, Render, etc.), trust the X-Forwarded-Proto header
 # so Django knows requests are secure and CSRF checks with secure origins work correctly.
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

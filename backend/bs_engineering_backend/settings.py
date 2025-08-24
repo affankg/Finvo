@@ -197,6 +197,23 @@ if not DEBUG:
 
 CORS_ALLOW_CREDENTIALS = True
 
+# If the app is running behind a proxy (like Fly, Render, etc.), trust the X-Forwarded-Proto header
+# so Django knows requests are secure and CSRF checks with secure origins work correctly.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# CSRF trusted origins: allow configuring via environment variable (comma-separated list of origins)
+# Example: CSRF_TRUSTED_ORIGINS=https://finvo-app.fly.dev,https://www.example.com
+raw_csrf_origins = config('CSRF_TRUSTED_ORIGINS', default='')
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in raw_csrf_origins.split(',') if o.strip()]
+
+# As a fallback when DEBUG is False and no CSRF_TRUSTED_ORIGINS provided, derive from ALLOWED_HOSTS
+if not CSRF_TRUSTED_ORIGINS and not DEBUG:
+    CSRF_TRUSTED_ORIGINS = [f'https://{h}' for h in ALLOWED_HOSTS if h and h != '*']
+
+# Make cookies secure in production
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
 # Email configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')

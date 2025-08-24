@@ -1,53 +1,34 @@
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { useState } from 'react';
 
-// Sidebar Icons
+// Simple SVG icons
 const DashboardIcon = () => (
-  <svg className="w-5 h-5" fill="none" stroke="curconst Clients = () => (
-  <Layout>
-    <div className="p-6">
-      <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent mb-6">Clients</h1>
-      <div className="bg-white shadow-lg rounded-lg border-l-4 border-indigo-500">
-        <div className="p-6">
-          <p className="text-slate-600 font-medium">Client management interface will be here.</p>
-        </div>
-      </div>
-    </div>
-  </Layout>
-);
-
-const Quotations = () => (
-  <Layout>
-    <div className="p-6">
-      <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent mb-6">Quotations</h1>
-      <div className="bg-white shadow-lg rounded-lg border-l-4 border-emerald-500">
-        <div className="p-6">
-          <p className="text-slate-600 font-medium">Quotation management interface will be here.</p>0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h18v18H3V3z" />
   </svg>
 );
 
 const ClientsIcon = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM6 11c1.657 0 3-1.343 3-3S7.657 5 6 5 3 6.343 3 8s1.343 3 3 3zM3 19a6 6 0 0112 0" />
   </svg>
 );
 
 const QuotationsIcon = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6M7 7h10v10H7z" />
   </svg>
 );
 
 const InvoicesIcon = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6M21 8V7a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2h14" />
   </svg>
 );
 
 const FinancialIcon = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" />
   </svg>
 );
 
@@ -63,7 +44,7 @@ const CloseIcon = () => (
   </svg>
 );
 
-// Simple Navigation Data
+// Navigation data
 const navigation = [
   { name: 'Dashboard', href: '/', icon: DashboardIcon },
   { name: 'Clients', href: '/clients', icon: ClientsIcon },
@@ -72,7 +53,7 @@ const navigation = [
   { name: 'Financial Activities', href: '/financial-activities', icon: FinancialIcon },
 ];
 
-// Sidebar Component
+// Sidebar
 interface SidebarProps {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
@@ -81,58 +62,34 @@ interface SidebarProps {
 const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   const location = useLocation();
 
-  const isCurrentPath = (href: string) => {
-    if (href === '/') {
-      return location.pathname === '/';
-    }
-    return location.pathname.startsWith(href);
-  };
+  const isCurrentPath = (href: string) => (href === '/' ? location.pathname === '/' : location.pathname.startsWith(href));
 
   return (
     <>
-      {/* Mobile backdrop */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity lg:hidden z-20"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
+      {isOpen && <div className="fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity lg:hidden z-20" onClick={() => setIsOpen(false)} />}
 
-      {/* Sidebar */}
       <div
         className={`fixed inset-y-0 left-0 z-30 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex flex-col h-full">
-          {/* Logo and close button */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            <Link 
-              to="/" 
-              className="flex items-center space-x-3 group"
-              onClick={() => setIsOpen(false)}
-            >
+            <Link to="/" className="flex items-center space-x-3 group" onClick={() => setIsOpen(false)}>
               <div className="h-8 w-8 bg-gradient-to-br from-indigo-600 to-blue-700 rounded-lg flex items-center justify-center shadow-md">
                 <span className="text-white font-bold text-sm">BS</span>
               </div>
-              <span className="text-lg font-bold bg-gradient-to-r from-indigo-600 to-blue-700 bg-clip-text text-transparent">
-                BS Engineering
-              </span>
+              <span className="text-lg font-bold bg-gradient-to-r from-indigo-600 to-blue-700 bg-clip-text text-transparent">BS Engineering</span>
             </Link>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="lg:hidden p-2 rounded-md text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors duration-200"
-            >
+            <button onClick={() => setIsOpen(false)} className="lg:hidden p-2 rounded-md text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors duration-200">
               <CloseIcon />
             </button>
           </div>
 
-          {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
             {navigation.map((item) => {
               const isActive = isCurrentPath(item.href);
               const IconComponent = item.icon;
-              
               return (
                 <Link
                   key={item.name}
@@ -151,7 +108,6 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
             })}
           </nav>
 
-          {/* User profile section */}
           <div className="border-t border-gray-200 p-4">
             <div className="flex items-center px-3 py-2 text-sm font-semibold text-slate-700 rounded-lg bg-gradient-to-r from-slate-50 to-indigo-50 mb-2 shadow-sm">
               <div className="flex-shrink-0">
@@ -177,43 +133,31 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   );
 };
 
-// Layout Component
+// Layout
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 const Layout = ({ children }: LayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex h-screen overflow-hidden">
-        {/* Sidebar */}
         <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
 
-        {/* Main content area */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Mobile header */}
           <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 shadow-sm">
             <div className="flex items-center justify-between">
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="p-2 rounded-md text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors duration-200"
-              >
+              <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-md text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors duration-200">
                 <MenuIcon />
               </button>
-              <h1 className="text-lg font-bold bg-gradient-to-r from-indigo-600 to-blue-700 bg-clip-text text-transparent">
-                BS Engineering
-              </h1>
+              <h1 className="text-lg font-bold bg-gradient-to-r from-indigo-600 to-blue-700 bg-clip-text text-transparent">BS Engineering</h1>
               <div className="w-10" />
             </div>
           </div>
 
-          {/* Main content */}
           <main className="flex-1 overflow-y-auto focus:outline-none">
-            <div className="relative">
-              {children}
-            </div>
+            <div className="relative">{children}</div>
           </main>
         </div>
       </div>
@@ -221,7 +165,7 @@ const Layout = ({ children }: LayoutProps) => {
   );
 };
 
-// Page Components
+// Pages
 const Dashboard = () => (
   <Layout>
     <div className="p-6">
@@ -300,83 +244,43 @@ const FinancialActivities = () => (
   </Layout>
 );
 
-// Login Component
+// Login
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // For demo purposes, just navigate to dashboard
     window.location.href = '/';
   };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            BS Engineering
-          </h2>
-          <p className="text-sm text-gray-600">
-            Sign in to your account
-          </p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">BS Engineering</h2>
+          <p className="text-sm text-gray-600">Sign in to your account</p>
         </div>
-        
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                Username
-              </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Enter your username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+              <input id="username" name="username" type="text" required className="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Enter your username" value={username} onChange={(e) => setUsername(e.target.value)} />
             </div>
-            
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <input id="password" name="password" type="password" required className="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
           </div>
-
           <div>
-            <button
-              type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Sign in
-            </button>
+            <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">Sign in</button>
           </div>
-          
-          <div className="text-center text-sm text-gray-500">
-            <p>Demo credentials: admin / admin123</p>
-          </div>
+          <div className="text-center text-sm text-gray-500"><p>Demo credentials: admin / admin123</p></div>
         </form>
       </div>
     </div>
   );
 };
 
-// Main App Component
+// App
 function WorkingApp() {
   return (
     <Router>

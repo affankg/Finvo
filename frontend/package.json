@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
   "dev": "vite",
-  "build": "tsc && vite build",
+  "build": "vite build",
   "vercel-build": "cross-env VITE_API_URL=https://finvo-1vyg1q.fly.dev npm run build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"

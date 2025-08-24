@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import config from './config/config';
 
 const SimpleLogin = () => {
   const [username, setUsername] = useState('');
@@ -12,7 +13,7 @@ const SimpleLogin = () => {
     setError('');
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth/login/', {
+  const response = await fetch(`${config.API_BASE_URL}/auth/login/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

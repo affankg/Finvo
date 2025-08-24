@@ -165,7 +165,12 @@ SIMPLE_JWT = {
 }
 
 # CORS configuration
-CORS_ALLOWED_ORIGINS = [
+# By default we keep a permissive local-dev set. For deployments you can either
+# set specific origins via CORS_ALLOWED_ORIGINS (default below) or enable
+# wildcard origin support by setting environment variable
+# CORS_ALLOW_ALL_ORIGINS=True. Note: when allowing all origins, cookies/credentials
+# cannot be used (browsers refuse Access-Control-Allow-Credentials with wildcard).
+DEFAULT_CORS_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:3001",
@@ -189,13 +194,28 @@ CORS_ALLOWED_ORIGINS = [
     "http://192.168.0.158:3000",
 ]
 
-# Add production frontend URL when deploying
-if not DEBUG:
-    CORS_ALLOWED_ORIGINS.extend([
-        "https://your-frontend-url.onrender.com",  # Update this with your actual frontend URL
-    ])
+# Read an env var that, when true, will allow ALL origins (useful for quick
+# testing or when your frontend is served from many dynamic origins). This is
+# not recommended for long-term production unless you understand the security
+# implications.
+USE_CORS_ALLOW_ALL = config('CORS_ALLOW_ALL_ORIGINS', default=False, cast=bool)
 
-CORS_ALLOW_CREDENTIALS = True
+if USE_CORS_ALLOW_ALL:
+    CORS_ALLOW_ALL_ORIGINS = True
+    # When allowing all origins, browsers won't accept credentials together with
+    # a wildcard origin. Disable credentials to avoid incorrect responses.
+    CORS_ALLOW_CREDENTIALS = False
+    CORS_ALLOWED_ORIGINS = []
+else:
+    # Start with the default local/dev origins
+    CORS_ALLOWED_ORIGINS = DEFAULT_CORS_ORIGINS.copy()
+    # Add production frontend URL when deploying (if DEBUG is False)
+    if not DEBUG:
+        CORS_ALLOWED_ORIGINS.extend([
+            "https://your-frontend-url.onrender.com",  # replace with actual frontend URL
+        ])
+    # Allow credentials by default (so cookie-based auth would work in dev)
+    CORS_ALLOW_CREDENTIALS = True
 
 # If the app is running behind a proxy (like Fly, Render, etc.), trust the X-Forwarded-Proto header
 # so Django knows requests are secure and CSRF checks with secure origins work correctly.

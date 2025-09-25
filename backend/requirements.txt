@@ -8,5 +8,5 @@ python-decouple==3.8
 whitenoise==6.8.2
 gunicorn==21.2.0
 django-filter==24.2
-psycopg2-binary==2.9.9
+# psycopg2-binary==2.9.9  # Commented out for local development; re-enable for production/PostgreSQL
 dj-database-url==2.1.0

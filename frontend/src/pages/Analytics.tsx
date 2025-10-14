@@ -8,7 +8,7 @@ import {
   InvoiceStatusChart,
   ReceivablesAgingChart
 } from '../components/FinancialCharts';
-import { LineChart, PieChart } from '../components/Charts';
+import { LineChart } from '../components/Charts';
 import { StatCard } from '../components/DashboardComponents';
 
 interface ChartFilters {

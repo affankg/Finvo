@@ -6,10 +6,8 @@ import BulkDeleteToolbar from '../components/BulkDeleteToolbar';
 import BulkDeleteConfirmation from '../components/BulkDeleteConfirmation';
 import { 
   UserIcon, 
-  BuildingOfficeIcon, 
   EnvelopeIcon, 
   PhoneIcon, 
-  MapPinIcon,
   EyeIcon,
   PencilIcon,
   TrashIcon,

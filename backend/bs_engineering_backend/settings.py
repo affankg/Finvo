@@ -164,37 +164,8 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
 }
 
-# CORS configuration
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:3001",
-    "http://127.0.0.1:3001",
-    "http://localhost:3002",
-    "http://127.0.0.1:3002",
-    "http://localhost:3003",
-    "http://127.0.0.1:3003",
-    "http://localhost:3004",
-    "http://127.0.0.1:3004",
-    "http://localhost:3005",
-    "http://127.0.0.1:3005",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://192.168.100.113:3003",
-    "http://192.168.100.113:3004",
-    "http://192.168.100.113:3000",
-    "http://192.168.100.113:5173",
-    # Add your current network IP for Vite frontend
-    "http://192.168.0.158:5173",
-    "http://192.168.0.158:3000",
-]
-
-# Add production frontend URL when deploying
-if not DEBUG:
-    CORS_ALLOWED_ORIGINS.extend([
-        "https://your-frontend-url.onrender.com",  # Update this with your actual frontend URL
-    ])
-
+# CORS configuration - allow all origins in all environments
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 # Email configuration

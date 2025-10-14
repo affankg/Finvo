@@ -155,7 +155,7 @@ const EnhancedCreateInvoiceModal: React.FC<EnhancedCreateInvoiceModalProps> = ({
       return;
     }
 
-    let convertPayload: any = null; // Declare outside try block for error handling
+    // Note: no separate convert payload is required when fully converting via backend
 
     try {
       setLoading(true);

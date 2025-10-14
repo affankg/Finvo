@@ -164,83 +164,9 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
 }
 
-# CORS configuration
-# By default we keep a permissive local-dev set. For deployments you can either
-# set specific origins via CORS_ALLOWED_ORIGINS (default below) or enable
-# wildcard origin support by setting environment variable
-# CORS_ALLOW_ALL_ORIGINS=True. Note: when allowing all origins, cookies/credentials
-# cannot be used (browsers refuse Access-Control-Allow-Credentials with wildcard).
-DEFAULT_CORS_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:3001",
-    "http://127.0.0.1:3001",
-    "http://localhost:3002",
-    "http://127.0.0.1:3002",
-    "http://localhost:3003",
-    "http://127.0.0.1:3003",
-    "http://localhost:3004",
-    "http://127.0.0.1:3004",
-    "http://localhost:3005",
-    "http://127.0.0.1:3005",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://192.168.100.113:3003",
-    "http://192.168.100.113:3004",
-    "http://192.168.100.113:3000",
-    "http://192.168.100.113:5173",
-    # Add your current network IP for Vite frontend
-    "http://192.168.0.158:5173",
-    "http://192.168.0.158:3000",
-]
-
-# Read an env var that, when true, will allow ALL origins (useful for quick
-# testing or when your frontend is served from many dynamic origins). This is
-# not recommended for long-term production unless you understand the security
-# implications.
-USE_CORS_ALLOW_ALL = config('CORS_ALLOW_ALL_ORIGINS', default=False, cast=bool)
-
-if USE_CORS_ALLOW_ALL:
-    CORS_ALLOW_ALL_ORIGINS = True
-    # When allowing all origins, browsers won't accept credentials together with
-    # a wildcard origin. Disable credentials to avoid incorrect responses.
-    CORS_ALLOW_CREDENTIALS = False
-    CORS_ALLOWED_ORIGINS = []
-else:
-    # Start with the default local/dev origins
-    CORS_ALLOWED_ORIGINS = DEFAULT_CORS_ORIGINS.copy()
-    # Add production frontend URL when deploying (if DEBUG is False)
-    if not DEBUG:
-        CORS_ALLOWED_ORIGINS.extend([
-            "https://finvo-one.vercel.app",  # Production Vercel frontend
-        ])
-    # Allow credentials by default (so cookie-based auth would work in dev)
-    CORS_ALLOW_CREDENTIALS = True
-
-# Allow overriding CORS origins from an environment variable (comma-separated list)
-# Example: CORS_ALLOWED_ORIGINS_ENV="https://finvo-gt54.vercel.app,https://other.app"
-raw_cors_env = config('CORS_ALLOWED_ORIGINS_ENV', default='')
-if raw_cors_env:
-    cors_list = [o.strip() for o in raw_cors_env.split(',') if o.strip()]
-    if cors_list:
-        CORS_ALLOWED_ORIGINS = cors_list
-
-# If the app is running behind a proxy (like Fly, Render, etc.), trust the X-Forwarded-Proto header
-# so Django knows requests are secure and CSRF checks with secure origins work correctly.
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
-# CSRF trusted origins: allow configuring via environment variable (comma-separated list of origins)
-# Example: CSRF_TRUSTED_ORIGINS=https://finvo-app.fly.dev,https://www.example.com
-raw_csrf_origins = config('CSRF_TRUSTED_ORIGINS', default='https://finvo-one.vercel.app')
-CSRF_TRUSTED_ORIGINS = [o.strip() for o in raw_csrf_origins.split(',') if o.strip()]
-
-# As a fallback when DEBUG is False and no CSRF_TRUSTED_ORIGINS provided, derive from ALLOWED_HOSTS
-if not CSRF_TRUSTED_ORIGINS and not DEBUG:
-    CSRF_TRUSTED_ORIGINS = [f'https://{h}' for h in ALLOWED_HOSTS if h and h != '*']
-
-# Make cookies secure in production
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG
+# CORS configuration - allow all origins in all environments
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
 # Email configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

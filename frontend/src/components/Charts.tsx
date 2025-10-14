@@ -114,7 +114,7 @@ export const BarChart: React.FC<BarChartProps> = ({
   const maxValue = Math.max(...data.map(d => d.value));
 
   return (
-    <div className={`${className}`} style={{ height: `${height}px` }}>
+    <div className={`${className}`} style={{ height: `${height}px` }} data-orientation={orientation}>
       <div className="flex h-full items-end space-x-2">
         {data.map((item, index) => {
           const heightPercent = (item.value / maxValue) * 100;

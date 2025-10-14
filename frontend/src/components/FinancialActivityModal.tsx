@@ -55,7 +55,7 @@ const FinancialActivityModal: React.FC<FinancialActivityModalProps> = ({
   onSubmit,
   editActivity = null
 }) => {
-  const { user } = useAuth();
+  useAuth();
   const { isDarkMode } = useTheme();
   
   const [formData, setFormData] = useState({

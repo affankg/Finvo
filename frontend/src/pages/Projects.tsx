@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import projectService, { Project } from '../services/projectService_fixed';
 import { api, Client } from '../services/api';
@@ -21,6 +21,7 @@ interface CreateProjectFormData {
 }
 
 const Projects: React.FC = () => {
+  const location = useLocation();
   const [projects, setProjects] = useState<Project[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [users, setUsers] = useState<any[]>([]);
@@ -93,6 +94,17 @@ const Projects: React.FC = () => {
     fetchClients();
     fetchUsers();
   }, [selectedClient, selectedStatus, searchTerm]);
+
+  // Check for create parameter in URL and auto-open modal
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    if (urlParams.get('create') === 'true') {
+      setShowCreateModal(true);
+      // Clean up the URL parameter to avoid reopening on refresh
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [location.search]);
 
   const fetchProjects = async () => {
     try {
@@ -369,100 +381,164 @@ const Projects: React.FC = () => {
         )}
 
         {/* Projects Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {projects.map(project => (
-            <div key={project.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
-              <div className="p-6">
-                {/* Header */}
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                      {project.name}
-                    </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {project.project_number}
-                    </p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+          {projects.map((project, index) => (
+            <div 
+              key={project.id} 
+              className="group relative bg-gradient-to-br from-white via-white to-gray-50/30 dark:from-gray-800 dark:via-gray-800 dark:to-gray-700/30 rounded-2xl shadow-lg border border-gray-200/60 dark:border-gray-700/50 hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 ease-out overflow-hidden backdrop-blur-sm"
+              style={{ 
+                animationDelay: `${index * 100}ms`,
+                animation: 'slideInUp 0.6s ease-out forwards'
+              }}
+            >
+              {/* Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              
+              {/* Status Indicator Stripe */}
+              <div className={`absolute top-0 left-0 right-0 h-1 ${
+                project.status === 'active' ? 'bg-gradient-to-r from-green-400 to-emerald-500' :
+                project.status === 'planning' ? 'bg-gradient-to-r from-blue-400 to-indigo-500' :
+                project.status === 'on_hold' ? 'bg-gradient-to-r from-yellow-400 to-orange-500' :
+                project.status === 'completed' ? 'bg-gradient-to-r from-purple-400 to-violet-500' :
+                'bg-gradient-to-r from-red-400 to-pink-500'
+              }`}></div>
+
+              <div className="relative p-8">
+                {/* Header Section */}
+                <div className="flex justify-between items-start mb-6">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <span className="text-white text-lg font-bold">🏢</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1 truncate group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors duration-300">
+                          {project.name}
+                        </h3>
+                        <p className="text-sm font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 px-3 py-1 rounded-full inline-block">
+                          {project.project_number}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex space-x-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      priorityOptions.find(p => p.value === project.priority)?.color || 'bg-gray-100 text-gray-800'
+                  
+                  {/* Priority Badge */}
+                  <div className="flex-shrink-0 ml-4">
+                    <span className={`px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm border ${
+                      project.priority === 'critical' ? 'bg-gradient-to-r from-red-50 to-red-100 text-red-700 border-red-200 dark:from-red-900/30 dark:to-red-800/30 dark:text-red-300 dark:border-red-700/50' :
+                      project.priority === 'high' ? 'bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 border-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 dark:text-orange-300 dark:border-orange-700/50' :
+                      project.priority === 'medium' ? 'bg-gradient-to-r from-yellow-50 to-yellow-100 text-yellow-700 border-yellow-200 dark:from-yellow-900/30 dark:to-yellow-800/30 dark:text-yellow-300 dark:border-yellow-700/50' :
+                      'bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 border-gray-200 dark:from-gray-700/30 dark:to-gray-600/30 dark:text-gray-300 dark:border-gray-600/50'
                     }`}>
                       {priorityOptions.find(p => p.value === project.priority)?.label || project.priority}
                     </span>
                   </div>
                 </div>
 
-                {/* Status and Client */}
-                <div className="flex items-center justify-between mb-4">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    statusColors[project.status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {project.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                  </span>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {project.client_name}
-                  </span>
+                {/* Status and Client Row */}
+                <div className="flex items-center justify-between mb-6 bg-gray-50/80 dark:bg-gray-700/30 rounded-xl p-4 backdrop-blur-sm">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-3 h-3 rounded-full shadow-sm ${
+                      project.status === 'active' ? 'bg-gradient-to-r from-green-400 to-emerald-500' :
+                      project.status === 'planning' ? 'bg-gradient-to-r from-blue-400 to-indigo-500' :
+                      project.status === 'on_hold' ? 'bg-gradient-to-r from-yellow-400 to-orange-500' :
+                      project.status === 'completed' ? 'bg-gradient-to-r from-purple-400 to-violet-500' :
+                      'bg-gradient-to-r from-red-400 to-pink-500'
+                    } animate-pulse`}></div>
+                    <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                      statusColors[project.status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {project.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-lg">👤</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {project.client_name}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Description */}
                 {project.description && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
-                    {project.description}
-                  </p>
+                  <div className="mb-6">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                      {project.description}
+                    </p>
+                  </div>
                 )}
 
-                {/* Project Details */}
-                <div className="space-y-2 mb-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">Budget:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">
+                {/* Project Details Grid */}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-4 border border-green-200/50 dark:border-green-700/30">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <span className="text-lg">💰</span>
+                      <span className="text-xs font-medium text-green-700 dark:text-green-300">Budget</span>
+                    </div>
+                    <div className="text-lg font-bold text-green-800 dark:text-green-200">
                       {formatCurrency(project.budget, project.currency)}
-                    </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">Start Date:</span>
-                    <span className="text-gray-900 dark:text-white">
+                  
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-200/50 dark:border-blue-700/30">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <span className="text-lg">📅</span>
+                      <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Start Date</span>
+                    </div>
+                    <div className="text-sm font-semibold text-blue-800 dark:text-blue-200">
                       {formatDate(project.start_date)}
-                    </span>
+                    </div>
                   </div>
+                  
                   {project.end_date && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500 dark:text-gray-400">End Date:</span>
-                      <span className="text-gray-900 dark:text-white">
+                    <div className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 rounded-xl p-4 border border-purple-200/50 dark:border-purple-700/30">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <span className="text-lg">🏁</span>
+                        <span className="text-xs font-medium text-purple-700 dark:text-purple-300">End Date</span>
+                      </div>
+                      <div className="text-sm font-semibold text-purple-800 dark:text-purple-200">
                         {formatDate(project.end_date)}
-                      </span>
+                      </div>
                     </div>
                   )}
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">Manager:</span>
-                    <span className="text-gray-900 dark:text-white">
-                      {project.project_manager_name}
-                    </span>
+                  
+                  <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl p-4 border border-orange-200/50 dark:border-orange-700/30">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <span className="text-lg">👨‍💼</span>
+                      <span className="text-xs font-medium text-orange-700 dark:text-orange-300">Manager</span>
+                    </div>
+                    <div className="text-sm font-semibold text-orange-800 dark:text-orange-200 truncate">
+                      {project.project_manager_name || 'Not assigned'}
+                    </div>
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex space-x-2">
+                <div className="flex space-x-3">
                   <Link
                     to={`/projects/${project.id}`}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium text-center transition-colors"
+                    className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-4 py-3 rounded-xl text-sm font-semibold text-center transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] flex items-center justify-center space-x-2"
                   >
-                    View Dashboard
+                    <span className="text-base">📊</span>
+                    <span>View Dashboard</span>
                   </Link>
                   <Link
                     to={`/projects/${project.id}/edit`}
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    className="px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-purple-300 dark:hover:border-purple-600 transition-all duration-300 flex items-center justify-center"
                   >
-                    Edit
+                    <span className="text-base">✏️</span>
                   </Link>
                   <button
                     onClick={() => handleDelete(project.id)}
-                    className="px-3 py-2 border border-red-300 dark:border-red-600 rounded-lg text-sm font-medium text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900 transition-colors"
+                    className="px-4 py-3 border-2 border-red-300 dark:border-red-600 rounded-xl text-sm font-semibold text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:border-red-400 dark:hover:border-red-500 transition-all duration-300 flex items-center justify-center"
                   >
-                    Delete
+                    <span className="text-base">🗑️</span>
                   </button>
                 </div>
               </div>
+
+              {/* Hover Effect Glow */}
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-600/10 via-transparent to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
             </div>
           ))}
         </div>
@@ -755,6 +831,152 @@ const Projects: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Enhanced Project Tiles Animations and Scrollbar Styles */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          /* Enhanced Purple Scrollbar for entire app */
+          html, body, * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(139, 92, 246, 0.8) rgba(139, 92, 246, 0.1);
+          }
+          
+          ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+          }
+          
+          ::-webkit-scrollbar-track {
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 6px;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            box-shadow: inset 0 0 6px rgba(139, 92, 246, 0.1);
+          }
+          
+          ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, 
+              rgba(139, 92, 246, 0.8) 0%, 
+              rgba(124, 58, 237, 0.9) 50%, 
+              rgba(109, 40, 217, 0.95) 100%
+            );
+            border-radius: 6px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 
+              0 2px 4px rgba(139, 92, 246, 0.3),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+          }
+          
+          ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, 
+              rgba(139, 92, 246, 1) 0%, 
+              rgba(124, 58, 237, 1) 50%, 
+              rgba(109, 40, 217, 1) 100%
+            );
+            box-shadow: 
+              0 4px 8px rgba(139, 92, 246, 0.4),
+              inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+          }
+          
+          ::-webkit-scrollbar-thumb:active {
+            background: linear-gradient(180deg, 
+              rgba(124, 58, 237, 1) 0%, 
+              rgba(109, 40, 217, 1) 50%, 
+              rgba(91, 33, 182, 1) 100%
+            );
+            transform: scale(0.95);
+          }
+          
+          ::-webkit-scrollbar-corner {
+            background: rgba(139, 92, 246, 0.1);
+          }
+
+          /* Project tile animations */
+          @keyframes slideInUp {
+            0% {
+              opacity: 0;
+              transform: translateY(40px) scale(0.95);
+            }
+            100% {
+              opacity: 1;
+              transform: translateY(0) scale(1);
+            }
+          }
+
+          @keyframes shimmer {
+            0% {
+              transform: translateX(-100%) skewX(-12deg);
+            }
+            100% {
+              transform: translateX(200%) skewX(-12deg);
+            }
+          }
+
+          @keyframes pulse-glow {
+            0%, 100% {
+              box-shadow: 0 0 5px rgba(139, 92, 246, 0.3);
+            }
+            50% {
+              box-shadow: 0 0 20px rgba(139, 92, 246, 0.6), 0 0 30px rgba(139, 92, 246, 0.4);
+            }
+          }
+
+          @keyframes float {
+            0%, 100% {
+              transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+              transform: translateY(-10px) rotate(2deg);
+            }
+          }
+
+          /* Text clamp utility */
+          .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+          }
+
+          /* Enhanced gradient animation */
+          @keyframes gradient-shift {
+            0%, 100% {
+              background-position: 0% 50%;
+            }
+            50% {
+              background-position: 100% 50%;
+            }
+          }
+
+          .gradient-animation {
+            background-size: 200% 200%;
+            animation: gradient-shift 3s ease infinite;
+          }
+
+          /* Custom focus styles for accessibility */
+          .focus-purple:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3);
+            border-color: rgba(139, 92, 246, 0.5);
+          }
+
+          /* Enhanced card hover effects */
+          .project-card:hover {
+            animation: float 6s ease-in-out infinite;
+          }
+
+          /* Smooth transitions for all elements */
+          * {
+            transition: all 0.3s ease;
+          }
+
+          /* Custom backdrop blur for modern glass effect */
+          .backdrop-blur-custom {
+            backdrop-filter: blur(12px) saturate(150%);
+            -webkit-backdrop-filter: blur(12px) saturate(150%);
+          }
+        `
+      }} />
     </div>
   );
 };

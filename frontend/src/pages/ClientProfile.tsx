@@ -17,7 +17,6 @@ import {
   ArrowLeftIcon,
   ChartBarIcon,
   DocumentIcon,
-  CalendarIcon,
   CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';

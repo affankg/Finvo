@@ -254,15 +254,7 @@ const CleanDashboard: React.FC = () => {
     return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
   };
 
-  const getProjectStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'completed': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-      case 'active': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
-      case 'on_hold': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
-      case 'cancelled': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
-    }
-  };
+  // removed unused getProjectStatusColor
 
   const getProjectPriorityColor = (priority: string) => {
     switch (priority?.toLowerCase()) {

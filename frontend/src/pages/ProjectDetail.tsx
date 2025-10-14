@@ -1,6 +1,6 @@
 import React, { useState, useEffect, memo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import projectService, { Project, ProjectDashboard } from '../services/projectService_fixed';
+import projectService, { ProjectDashboard } from '../services/projectService_fixed';
 import ExpenseManagement from '../components/ExpenseManagement';
 
 const ProjectDetail: React.FC = memo(() => {

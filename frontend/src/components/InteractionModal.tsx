@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Interaction, usersAPI, currencyAPI, User, Currency } from '../services/api';
+import { Interaction, currencyAPI, Currency } from '../services/api';
 import { 
   XMarkIcon,
   CalendarIcon,
-  UserIcon,
-  DocumentTextIcon,
   CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
@@ -37,13 +35,11 @@ const InteractionModal: React.FC<InteractionModalProps> = ({
     scheduled_date: '',
     completed_date: '',
   });
-  const [users, setUsers] = useState<User[]>([]);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      loadUsers();
       loadCurrencies();
       if (interaction) {
         setFormData({
@@ -64,15 +60,6 @@ const InteractionModal: React.FC<InteractionModalProps> = ({
       }
     }
   }, [isOpen, interaction, clientId]);
-
-  const loadUsers = async () => {
-    try {
-      const response = await usersAPI.getAll();
-      setUsers(response.data.results || []);
-    } catch (error) {
-      console.error('Failed to load users:', error);
-    }
-  };
 
   const loadCurrencies = async () => {
     try {

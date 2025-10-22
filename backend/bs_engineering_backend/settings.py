@@ -29,7 +29,9 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-#yxitycs-micb1si^edzw
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default='False', cast=bool)
 
-ALLOWED_HOSTS = ['*', '192.168.100.113', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['*', '192.168.100.113', '127.0.0.1', 'localhost', 'finvo-1vyg1q.fly.dev']
+
+CSRF_TRUSTED_ORIGINS = ['https://finvo-1vyg1q.fly.dev']
 
 
 # Application definition

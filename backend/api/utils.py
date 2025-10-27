@@ -209,7 +209,9 @@ def generate_pdf(doc_type, instance):
     company_info = settings.COMPANY_INFO
     
     # Header with LOGO ON LEFT and DOCUMENT INFO ON RIGHT - Properly Sized
+    # Added company logo
     logo_paths = [
+        os.path.join(settings.BASE_DIR, 'static', 'logo.jpg'),  # Added company logo
         os.path.join(settings.MEDIA_ROOT, 'images', 'company-logo.png'),
         os.path.join(settings.MEDIA_ROOT, 'images', 'bs-logo-new.png'),
     ]
@@ -220,8 +222,8 @@ def generate_pdf(doc_type, instance):
     for logo_path in logo_paths:
         if os.path.exists(logo_path):
             try:
-                # Logo size adjusted to match header table width (4.2")
-                logo = Image(logo_path, width=4.2*inch, height=1.9*inch, kind='proportional')
+                # Added company logo - Scale to 120px width maintaining aspect ratio for better visibility
+                logo = Image(logo_path, width=120, height=120, kind='proportional')
                 logo_element = logo
                 logo_loaded = True
                 break
@@ -230,7 +232,7 @@ def generate_pdf(doc_type, instance):
                 continue
     
     if not logo_loaded:
-        logo_element = Spacer(4.2*inch, 1.9*inch)  # Match header table width
+        logo_element = Spacer(120, 120)  # Added company logo - Match new logo size
     
     # Document info - right side, properly aligned with vertical centering
     document_info_style = ParagraphStyle(
@@ -266,14 +268,14 @@ def generate_pdf(doc_type, instance):
     
     document_paragraph = Paragraph(doc_info_text, document_info_style)
     
-    # Header table - matched proportions with client section (4.2" + 2.1" = 6.3")
+    # Header table - Added company logo positioned at top-left with perfect layout
     header_table_data = [[logo_element, document_paragraph]]
     header_table = Table(header_table_data, colWidths=[4.2*inch, 2.1*inch])  # Match client table proportions exactly
     header_table.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),  # Changed from TOP to MIDDLE for better alignment
-        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),  # Added company logo - Align logo to top-left
+        ('LEFTPADDING', (0, 0), (0, 0), 20),  # Added company logo - 20px left margin for perfect alignment
         ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (0, 0), 20),   # Added company logo - 20px top margin for perfect alignment
         ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
     ]))
     story.append(header_table)

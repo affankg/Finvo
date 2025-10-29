@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
@@ -25,7 +25,22 @@ def health_check(request):
     """Simple health check - just return OK"""
     return HttpResponse("OK", status=200, content_type='text/plain')
 
+def home(request):
+    """API home page"""
+    return JsonResponse({
+        'message': 'Finvo API is running',
+        'version': '1.0.0',
+        'endpoints': {
+            'admin': '/admin/',
+            'api': '/api/',
+            'health': '/health/',
+            'token': '/api/token/',
+            'token_refresh': '/api/token/refresh/',
+        }
+    })
+
 urlpatterns = [
+    path('', home, name='home'),
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

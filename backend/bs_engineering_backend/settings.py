@@ -51,11 +51,24 @@ INSTALLED_APPS = [
 
 # Session Configuration
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
-SESSION_COOKIE_AGE = 86400 * 30  # 30 days
-SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_AGE = 86400 * 7  # 7 days
+SESSION_SAVE_EVERY_REQUEST = False
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
+
+# Cache Configuration
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 300,  # 5 minutes
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+            'CULL_FREQUENCY': 3,
+        }
+    }
+}
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -99,16 +112,23 @@ DATABASE_URL = config('DATABASE_URL', default=None)
 if DATABASE_URL:
     # Production database configuration
     DATABASES = {
-        'default': {
-            **dj_database_url.parse(DATABASE_URL),
-            'CONN_MAX_AGE': 600,  # Keep database connections alive for 10 minutes
-            'ATOMIC_REQUESTS': True,  # Make all views atomic by default
-            'OPTIONS': {
-                'connect_timeout': 10,
-                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
-            }
-        }
+        'default': dj_database_url.parse(DATABASE_URL)
     }
+    
+    # Add connection settings after parsing
+    DATABASES['default'].update({
+        'CONN_MAX_AGE': 60,  # 60 second connection lifetime
+        'ATOMIC_REQUESTS': True,
+        'OPTIONS': {
+            'connect_timeout': 10,
+            'keepalives': 1,
+            'keepalives_idle': 60,
+            'keepalives_interval': 10,
+            'keepalives_count': 3,
+            'max_connections': 10,
+            'sslmode': 'require',
+        }
+    })
 else:
     # Development database configuration
     DATABASES = {
@@ -173,6 +193,14 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/day',
+        'user': '1000/day'
+    }
 }
 
 # JWT configuration
@@ -186,6 +214,19 @@ SIMPLE_JWT = {
 # CORS configuration - allow all origins in all environments
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+
+# Timeout settings
+TIMEOUT_SECONDS = 30
+
+# Error handling
+DEBUG = config('DEBUG', default='False', cast=bool)
+ALLOWED_HOSTS = ['*', '192.168.100.113', '127.0.0.1', 'localhost', 'finvo-1vyg1q.fly.dev']
+
+# Django security settings
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 # Email configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

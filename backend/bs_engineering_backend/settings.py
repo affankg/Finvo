@@ -78,7 +78,6 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'api.middleware.user_refresh.UserRefreshMiddleware',  # Add this before AuditLogMiddleware
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'api.middleware.AuditLogMiddleware',
@@ -116,19 +115,8 @@ if DATABASE_URL:
     }
     
     # Add connection settings after parsing
-    DATABASES['default'].update({
-        'CONN_MAX_AGE': 60,  # 60 second connection lifetime
-        'ATOMIC_REQUESTS': True,
-        'OPTIONS': {
-            'connect_timeout': 10,
-            'keepalives': 1,
-            'keepalives_idle': 60,
-            'keepalives_interval': 10,
-            'keepalives_count': 3,
-            'max_connections': 10,
-            'sslmode': 'require',
-        }
-    })
+    DATABASES['default']['CONN_MAX_AGE'] = 60
+    DATABASES['default']['ATOMIC_REQUESTS'] = True
 else:
     # Development database configuration
     DATABASES = {
@@ -224,7 +212,7 @@ ALLOWED_HOSTS = ['*', '192.168.100.113', '127.0.0.1', 'localhost', 'finvo-1vyg1q
 
 # Django security settings
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = True
+SECURE_SSL_REDIRECT = False  # Disable to allow health checks
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 

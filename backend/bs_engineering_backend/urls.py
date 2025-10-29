@@ -17,37 +17,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from django.db import connection
 
+@csrf_exempt
 def health_check(request):
-    """Lightweight health check that doesn't hit the database"""
-    from django.db import connection
-    from django.db.utils import OperationalError
-    
-    try:
-        # Quick memory status check
-        import psutil
-        memory = psutil.virtual_memory()
-        if memory.percent > 95:  # If memory usage is above 95%
-            return HttpResponse("Memory critical", status=500)
-            
-        # Verify DB connection is available but don't query
-        connection.ensure_connection()
-        
-        return HttpResponse(
-            "OK",
-            status=200,
-            headers={
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0'
-            }
-        )
-    except OperationalError:
-        return HttpResponse("Database unavailable", status=503)
-    except Exception as e:
-        return HttpResponse(str(e), status=500)
+    """Simple health check - just return OK"""
+    return HttpResponse("OK", status=200, content_type='text/plain')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

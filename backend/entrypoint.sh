@@ -43,17 +43,12 @@ exec gunicorn bs_engineering_backend.wsgi:application \
     --bind 0.0.0.0:${PORT} \
     --workers 2 \
     --threads 2 \
-    --timeout 30 \
+    --timeout 60 \
     --keep-alive 5 \
-    --backlog 100 \
-    --max-requests 250 \
-    --max-requests-jitter 25 \
+    --max-requests 500 \
+    --max-requests-jitter 50 \
     --graceful-timeout 30 \
     --worker-class=sync \
     --log-level info \
     --access-logfile - \
-    --error-logfile - \
-    --access-logformat '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %(D)s' \
-    --logger-class gunicorn.glogging.Logger \
-    --statsd-host=localhost:8125 \
-    --config python:bs_engineering_backend.gunicorn_conf
+    --error-logfile -

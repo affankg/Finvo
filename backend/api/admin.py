@@ -24,6 +24,18 @@ class UserAdmin(BaseUserAdmin):
     add_fieldsets = BaseUserAdmin.add_fieldsets + (
         ('Role Information', {'fields': ('role',)}),
     )
+    
+    def save_model(self, request, obj, form, change):
+        """Override save_model to ensure role changes persist"""
+        if change and 'role' in form.changed_data:
+            # Store the new role before saving
+            new_role = obj.role
+            super().save_model(request, obj, form, change)
+            # Double-check the role was saved correctly
+            obj.refresh_from_db()
+            if obj.role != new_role:
+                obj.role = new_role
+                obj.save()
 
 # Client Admin with Interactions
 class InteractionInline(admin.TabularInline):

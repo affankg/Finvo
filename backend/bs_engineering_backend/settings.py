@@ -49,6 +49,14 @@ INSTALLED_APPS = [
     'api',
 ]
 
+# Session Configuration
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 86400 * 30  # 30 days
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -57,6 +65,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'api.middleware.user_refresh.UserRefreshMiddleware',  # Add this before AuditLogMiddleware
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'api.middleware.AuditLogMiddleware',
@@ -90,7 +99,15 @@ DATABASE_URL = config('DATABASE_URL', default=None)
 if DATABASE_URL:
     # Production database configuration
     DATABASES = {
-        'default': dj_database_url.parse(DATABASE_URL)
+        'default': {
+            **dj_database_url.parse(DATABASE_URL),
+            'CONN_MAX_AGE': 600,  # Keep database connections alive for 10 minutes
+            'ATOMIC_REQUESTS': True,  # Make all views atomic by default
+            'OPTIONS': {
+                'connect_timeout': 10,
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
+            }
+        }
     }
 else:
     # Development database configuration

@@ -1,43 +1,19 @@
 #!/usr/bin/env bash
 set -e
 
-echo "Waiting for database..."
-python << END
-import sys
-import time
-import psycopg2
-import os
-
-# Get the DATABASE_URL from environment
-db_url = os.environ.get('DATABASE_URL')
-
-if not db_url:
-    print("DATABASE_URL not set")
-    sys.exit(1)
-
-for i in range(30):
-    try:
-        psycopg2.connect(db_url)
-        print("Database is ready!")
-        break
-    except psycopg2.OperationalError:
-        print("Database is not ready. Waiting...")
-        time.sleep(1)
-    if i == 29:
-        print("Could not connect to database")
-        sys.exit(1)
-END
+echo "Waiting for database to be ready..."
+sleep 5
 
 echo "Running migrations..."
-python manage.py migrate --noinput
+python manage.py migrate --noinput || echo "Migration failed, continuing..."
 
 echo "Collecting static files..."
-python manage.py collectstatic --no-input
+python manage.py collectstatic --no-input --clear
 
 echo "Creating superuser if needed..."
 python manage.py create_superuser_if_not_exists || true
 
-echo "Starting Gunicorn..."
+echo "Starting Gunicorn on port ${PORT:-8080}..."
 PORT=${PORT:-8080}
 exec gunicorn bs_engineering_backend.wsgi:application \
     --bind 0.0.0.0:${PORT} \

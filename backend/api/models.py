@@ -13,6 +13,14 @@ class User(AbstractUser):
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='viewer')
 
+    def save(self, *args, **kwargs):
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+            # Verify the save operation
+            fresh_instance = User.objects.get(pk=self.pk)
+            if fresh_instance.role != self.role:
+                raise ValueError(f"Role persistence error: Expected {self.role}, got {fresh_instance.role}")
+
 class NumberSequence(models.Model):
     """Track number sequences for different document types"""
     DOCUMENT_TYPES = (

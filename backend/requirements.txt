@@ -10,3 +10,4 @@ gunicorn==21.2.0
 django-filter==24.2
 # psycopg2-binary==2.9.9  # Commented out for local development; re-enable for production/PostgreSQL
 dj-database-url==2.1.0
+psutil==5.9.8

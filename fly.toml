@@ -21,13 +21,21 @@ primary_region = 'sin'
 
 [checks]
   [checks.health]
-    grace_period = "30s"
-    interval = "15s"
+    grace_period = "60s"
+    interval = "30s"
     method = "get"
-    path = "/health"
+    path = "/health/"
     port = 8080
-    timeout = "10s"
+    timeout = "15s"
     type = "http"
+    headers = { "fly-prefer-region" = "sin" }
+    protocol = "http"
+    tls_skip_verify = true
+    
+[services.concurrency]
+  type = "connections"
+  hard_limit = 50
+  soft_limit = 40
 
 [[vm]]
   memory = '1gb'

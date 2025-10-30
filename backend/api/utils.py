@@ -209,9 +209,11 @@ def generate_pdf(doc_type, instance):
     company_info = settings.COMPANY_INFO
     
     # Header with LOGO ON LEFT and DOCUMENT INFO ON RIGHT - Properly Sized
-    # Added company logo
+    # Company logo paths - prioritized order
     logo_paths = [
-        os.path.join(settings.BASE_DIR, 'static', 'logo.jpg'),  # Added company logo
+        os.path.join(settings.BASE_DIR, 'static', 'bs-engineering-logo.png'),  # Primary logo
+        os.path.join(settings.BASE_DIR, 'static', 'logo.png'),
+        os.path.join(settings.BASE_DIR, 'static', 'logo.jpg'),
         os.path.join(settings.MEDIA_ROOT, 'images', 'company-logo.png'),
         os.path.join(settings.MEDIA_ROOT, 'images', 'bs-logo-new.png'),
     ]
@@ -222,8 +224,9 @@ def generate_pdf(doc_type, instance):
     for logo_path in logo_paths:
         if os.path.exists(logo_path):
             try:
-                # Added company logo - Scale to 120px width maintaining aspect ratio for better visibility
-                logo = Image(logo_path, width=120, height=120, kind='proportional')
+                # Scale logo to 140px width with proportional height for better visibility
+                # The logo will maintain aspect ratio and fit nicely in the header
+                logo = Image(logo_path, width=140, height=80, kind='proportional')
                 logo_element = logo
                 logo_loaded = True
                 break
@@ -232,7 +235,7 @@ def generate_pdf(doc_type, instance):
                 continue
     
     if not logo_loaded:
-        logo_element = Spacer(120, 120)  # Added company logo - Match new logo size
+        logo_element = Spacer(140, 80)  # Match logo size if not loaded
     
     # Document info - right side, properly aligned with vertical centering
     document_info_style = ParagraphStyle(

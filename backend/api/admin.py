@@ -27,15 +27,34 @@ class UserAdmin(BaseUserAdmin):
     
     def save_model(self, request, obj, form, change):
         """Override save_model to ensure role changes persist"""
+        from django.db import transaction, connection
+        import logging
+        logger = logging.getLogger(__name__)
+        
         if change and 'role' in form.changed_data:
-            # Store the new role before saving
             new_role = obj.role
+            logger.info(f"Admin changing role for {obj.username} to {new_role}")
+            
+            with transaction.atomic():
+                # Save the model
+                super().save_model(request, obj, form, change)
+                
+                # Verify and force if necessary
+                obj.refresh_from_db()
+                if obj.role != new_role:
+                    logger.warning(f"Role mismatch detected for {obj.username}, forcing update")
+                    # Use raw SQL to bypass any ORM issues
+                    with connection.cursor() as cursor:
+                        cursor.execute(
+                            "UPDATE api_user SET role = %s WHERE id = %s",
+                            [new_role, obj.id]
+                        )
+                    obj.refresh_from_db()
+                    logger.info(f"Role forcibly updated to {obj.role}")
+                else:
+                    logger.info(f"Role successfully saved as {obj.role}")
+        else:
             super().save_model(request, obj, form, change)
-            # Double-check the role was saved correctly
-            obj.refresh_from_db()
-            if obj.role != new_role:
-                obj.role = new_role
-                obj.save()
 
 # Client Admin with Interactions
 class InteractionInline(admin.TabularInline):

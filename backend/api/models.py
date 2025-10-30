@@ -3,6 +3,9 @@ from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from django.db import transaction
 from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 class User(AbstractUser):
     ROLE_CHOICES = (
@@ -11,15 +14,41 @@ class User(AbstractUser):
         ('accountant', 'Accountant'),
         ('viewer', 'Viewer'),
     )
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='viewer')
+    role = models.CharField(
+        max_length=20, 
+        choices=ROLE_CHOICES, 
+        default='viewer',
+        db_index=True  # Add index for better query performance
+    )
 
     def save(self, *args, **kwargs):
+        """Override save to ensure role persists correctly"""
+        # Store the intended role before saving
+        intended_role = self.role
+        
         with transaction.atomic():
+            # Use select_for_update if updating existing user
+            if self.pk:
+                try:
+                    User.objects.select_for_update().get(pk=self.pk)
+                except User.DoesNotExist:
+                    pass
+            
             super().save(*args, **kwargs)
-            # Verify the save operation
-            fresh_instance = User.objects.get(pk=self.pk)
-            if fresh_instance.role != self.role:
-                raise ValueError(f"Role persistence error: Expected {self.role}, got {fresh_instance.role}")
+            
+            # Verify the role was saved correctly
+            if self.pk:
+                fresh_instance = User.objects.get(pk=self.pk)
+                if fresh_instance.role != intended_role:
+                    logger.error(f"Role mismatch after save for user {self.username}: Expected {intended_role}, got {fresh_instance.role}")
+                    # Force the role update with raw SQL
+                    from django.db import connection
+                    with connection.cursor() as cursor:
+                        cursor.execute(
+                            "UPDATE api_user SET role = %s WHERE id = %s",
+                            [intended_role, self.pk]
+                        )
+                    logger.info(f"Forced role update for user {self.username} to {intended_role}")
 
 class NumberSequence(models.Model):
     """Track number sequences for different document types"""

@@ -62,12 +62,41 @@ class UserSerializer(serializers.ModelSerializer):
         return user
         
     def update(self, instance, validated_data):
+        """Update user with explicit role persistence"""
+        from django.db import transaction
+        import logging
+        logger = logging.getLogger(__name__)
+        
         password = validated_data.pop('password', None)
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        if password:
-            instance.set_password(password)
-        instance.save()
+        role_changed = 'role' in validated_data and validated_data.get('role') != instance.role
+        new_role = validated_data.get('role')
+        
+        with transaction.atomic():
+            # Update all fields explicitly
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+            
+            if password:
+                instance.set_password(password)
+            
+            # Save the instance
+            instance.save(update_fields=list(validated_data.keys()) if not password else None)
+            
+            # If role changed, verify it persisted
+            if role_changed:
+                instance.refresh_from_db()
+                if instance.role != new_role:
+                    logger.error(f"Role persistence failed for user {instance.username}: Expected {new_role}, got {instance.role}")
+                    # Force update with raw SQL as last resort
+                    from django.db import connection
+                    with connection.cursor() as cursor:
+                        cursor.execute(
+                            "UPDATE api_user SET role = %s WHERE id = %s",
+                            [new_role, instance.id]
+                        )
+                    instance.refresh_from_db()
+                    logger.info(f"Forced role update for user {instance.username} to {instance.role}")
+        
         return instance
 
 class ClientSerializer(serializers.ModelSerializer):

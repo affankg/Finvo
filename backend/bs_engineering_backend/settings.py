@@ -31,7 +31,12 @@ DEBUG = config('DEBUG', default='False', cast=bool)
 
 ALLOWED_HOSTS = ['*', '192.168.100.113', '127.0.0.1', 'localhost', 'finvo-1vyg1q.fly.dev']
 
-CSRF_TRUSTED_ORIGINS = ['https://finvo-1vyg1q.fly.dev']
+CSRF_TRUSTED_ORIGINS = [
+    'https://finvo-1vyg1q.fly.dev',
+    'https://finvo-one.vercel.app',
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+]
 
 
 # Application definition
@@ -215,6 +220,9 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = False  # Disable to allow health checks
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'None'  # Allow cross-site requests
+CSRF_USE_SESSIONS = False
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF token
 
 # Email configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

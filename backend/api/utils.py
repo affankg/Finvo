@@ -173,13 +173,14 @@ def generate_pdf(doc_type, instance):
     buffer = BytesIO()
     
     # Create document with standard margins (no special footer handling)
+    # Logo positioning: 0.5 inch from top (36 points), 0.6 inch from left (43.2 points)
     doc = BaseDocTemplate(
         buffer,
         pagesize=A4,
         rightMargin=35,
-        leftMargin=35,
-        topMargin=35,
-        bottomMargin=60,  # Standard bottom margin
+        leftMargin=0.6*inch,  # 0.6 inch from left for logo positioning
+        topMargin=0.5*inch,   # 0.5 inch from top for logo positioning
+        bottomMargin=60,      # Standard bottom margin
         showBoundary=0
     )
     
@@ -224,9 +225,9 @@ def generate_pdf(doc_type, instance):
     for logo_path in logo_paths:
         if os.path.exists(logo_path):
             try:
-                # Scale logo to 140px width with proportional height for better visibility
-                # The logo will maintain aspect ratio and fit nicely in the header
-                logo = Image(logo_path, width=140, height=80, kind='proportional')
+                # Logo size: 1.8 inches wide x 0.9 inches high (129.6 x 64.8 points)
+                # Position: 0.5 inch from top, 0.6 inch from left
+                logo = Image(logo_path, width=1.8*inch, height=0.9*inch, kind='proportional')
                 logo_element = logo
                 logo_loaded = True
                 break
@@ -235,7 +236,7 @@ def generate_pdf(doc_type, instance):
                 continue
     
     if not logo_loaded:
-        logo_element = Spacer(140, 80)  # Match logo size if not loaded
+        logo_element = Spacer(1.8*inch, 0.9*inch)  # Match logo size if not loaded
     
     # Document info - right side, properly aligned with vertical centering
     document_info_style = ParagraphStyle(

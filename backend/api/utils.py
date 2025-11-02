@@ -197,8 +197,35 @@ def generate_pdf(doc_type, instance):
         showBoundary=0
     )
     
-    # Create single page template - no special footer template needed
-    main_template = PageTemplate(id='main', frames=[main_frame])
+    # Footer function to be called on every page
+    def draw_footer(canvas, doc):
+        """Draw footer at the bottom of every page"""
+        canvas.saveState()
+        
+        # Footer content
+        current_date = datetime.now().strftime("%B %d, %Y at %I:%M %p")
+        
+        # Position footer at very bottom of page
+        page_width = A4[0]
+        footer_y = 30  # 30 points from bottom (very bottom of page)
+        
+        # Draw footer lines centered
+        canvas.setFont('Helvetica-Bold', 9)
+        canvas.drawCentredString(page_width / 2, footer_y + 36, "Thank you for choosing BS Engineering!")
+        
+        canvas.setFont('Helvetica', 8)
+        canvas.drawCentredString(page_width / 2, footer_y + 24, f"Generated: {current_date}")
+        
+        canvas.drawCentredString(page_width / 2, footer_y + 12, 
+                                "Questions? Contact us: bs@bsconsults.com | P: 92.21.34982786 | C: +92.3063216344 | C: +92.3443311303")
+        
+        canvas.setFont('Helvetica-Oblique', 8)
+        canvas.drawCentredString(page_width / 2, footer_y, "Your trusted engineering partner")
+        
+        canvas.restoreState()
+    
+    # Create page template with footer
+    main_template = PageTemplate(id='main', frames=[main_frame], onPage=draw_footer)
     
     # Add template to document
     doc.addPageTemplates([main_template])
@@ -834,39 +861,10 @@ def generate_pdf(doc_type, instance):
     terms_section = KeepTogether([terms_header_table, terms_table])
     story.append(terms_section)
     
-    # Footer positioned at bottom of page using custom flowable
-    story.append(Spacer(1, 0.2*inch))  # Small spacing after terms
+    # Footer is now drawn on every page via the onPage callback
+    # No need to add it to the story
     
-    # Footer content with improved formatting
-    current_date = datetime.now().strftime("%B %d, %Y at %I:%M %p")
-    footer_text = (
-        f'<b>Thank you for choosing BS Engineering!</b><br/>'
-        f'<font size="8">Generated: {current_date}</font><br/>'
-        f'<font size="8">Questions? Contact us: <b>bs@bsconsults.com</b> | '
-        f'<b>P: 92.21.34982786</b> | '
-        f'<b>C: +92.3063216344</b> | <b>C: +92.3443311303</b></font><br/>'
-        f'<i><font size="8">Your trusted engineering partner</font></i>'
-    )
-    
-    # Footer styling - 9pt, centered with better spacing
-    footer_style = ParagraphStyle(
-        'FooterContent',
-        fontName='Helvetica',
-        fontSize=9,
-        alignment=TA_CENTER,
-        textColor=colors.HexColor('#2c3e50'),
-        leading=12,  # Increased line spacing for better readability
-        spaceAfter=0,
-        spaceBefore=0,
-        leftIndent=0,
-        rightIndent=0
-    )
-    
-    # Add custom bottom footer flowable
-    bottom_footer = BottomFooter(footer_text, footer_style)
-    story.append(bottom_footer)
-    
-    # Build the document
+    # Build the document (footer will be automatically added to every page)
     doc.build(story)
     
     pdf_content = buffer.getvalue()

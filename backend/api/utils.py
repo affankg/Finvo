@@ -199,24 +199,24 @@ def generate_pdf(doc_type, instance):
     
     # Footer function to be called on every page
     def draw_footer(canvas, doc):
-        """Draw footer at the bottom of every page"""
+        """Draw footer at the exact bottom of every page"""
         canvas.saveState()
         
         # Footer content
         current_date = datetime.now().strftime("%B %d, %Y at %I:%M %p")
         
-        # Position footer at very bottom of page
+        # Position footer at exact bottom of page - moved down for perfect end positioning
         page_width = A4[0]
-        footer_y = 30  # 30 points from bottom (very bottom of page)
+        footer_y = 15  # 15 points from bottom (exact end of invoice page)
         
-        # Draw footer lines centered
+        # Draw footer lines centered with tighter spacing for compact layout at page end
         canvas.setFont('Helvetica-Bold', 9)
-        canvas.drawCentredString(page_width / 2, footer_y + 36, "Thank you for choosing BS Engineering!")
+        canvas.drawCentredString(page_width / 2, footer_y + 33, "Thank you for choosing BS Engineering!")
         
         canvas.setFont('Helvetica', 8)
-        canvas.drawCentredString(page_width / 2, footer_y + 24, f"Generated: {current_date}")
+        canvas.drawCentredString(page_width / 2, footer_y + 22, f"Generated: {current_date}")
         
-        canvas.drawCentredString(page_width / 2, footer_y + 12, 
+        canvas.drawCentredString(page_width / 2, footer_y + 11, 
                                 "Questions? Contact us: bs@bsconsults.com | P: 92.21.34982786 | C: +92.3063216344 | C: +92.3443311303")
         
         canvas.setFont('Helvetica-Oblique', 8)
@@ -300,14 +300,14 @@ def generate_pdf(doc_type, instance):
     
     document_paragraph = Paragraph(doc_info_text, document_info_style)
     
-    # Header table - Added company logo positioned at top-left with perfect layout
+    # Header table - Logo and document info perfectly aligned horizontally (parallel)
     header_table_data = [[logo_element, document_paragraph]]
-    header_table = Table(header_table_data, colWidths=[4.2*inch, 2.1*inch])  # Match client table proportions exactly
+    header_table = Table(header_table_data, colWidths=[4.2*inch, 2.1*inch])
     header_table.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),  # Added company logo - Align logo to top-left
-        ('LEFTPADDING', (0, 0), (0, 0), 20),  # Added company logo - 20px left margin for perfect alignment
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),  # MIDDLE alignment makes logo parallel with INVOICE# text
+        ('LEFTPADDING', (0, 0), (0, 0), 20),
         ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ('TOPPADDING', (0, 0), (0, 0), 20),   # Added company logo - 20px top margin for perfect alignment
+        ('TOPPADDING', (0, 0), (-1, -1), 10),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
     ]))
     story.append(header_table)
@@ -568,10 +568,10 @@ def generate_pdf(doc_type, instance):
         
         # Items data alignment - proper alignment as specified
         ('ALIGN', (0, 1), (0, num_items), 'LEFT'),      # Description left-aligned
-        ('ALIGN', (1, 1), (1, num_items), 'CENTER'),    # Qty center-aligned (FIXED)
-        ('ALIGN', (2, 1), (2, num_items), 'RIGHT'),     # Unit Price right-aligned
+        ('ALIGN', (1, 1), (1, num_items), 'CENTER'),    # Qty center-aligned
+        ('ALIGN', (2, 1), (2, num_items), 'CENTER'),    # Unit Price center-aligned (exact center under header)
         ('ALIGN', (3, 1), (3, num_items), 'CENTER'),    # Tax center-aligned
-        ('ALIGN', (4, 1), (4, num_items), 'RIGHT'),     # Total right-aligned
+        ('ALIGN', (4, 1), (4, num_items), 'CENTER'),    # Total center-aligned (exact center under header)
         
         # Enhanced typography for readability
         ('FONTNAME', (0, 1), (-1, num_items), 'Helvetica'),

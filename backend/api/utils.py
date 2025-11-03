@@ -172,7 +172,7 @@ def generate_pdf(doc_type, instance):
     """
     buffer = BytesIO()
     
-    # Create document with standard margins (no special footer handling)
+    # Create document with margins adjusted for printable footer on A4 paper
     # Logo positioning: 0.5 inch from top (36 points), 0.6 inch from left (43.2 points)
     doc = BaseDocTemplate(
         buffer,
@@ -180,7 +180,7 @@ def generate_pdf(doc_type, instance):
         rightMargin=35,
         leftMargin=0.6*inch,  # 0.6 inch from left for logo positioning
         topMargin=0.5*inch,   # 0.5 inch from top for logo positioning
-        bottomMargin=60,      # Standard bottom margin
+        bottomMargin=100,     # Increased to 100 points for printable footer area
         showBoundary=0
     )
     
@@ -199,17 +199,17 @@ def generate_pdf(doc_type, instance):
     
     # Footer function to be called on every page
     def draw_footer(canvas, doc):
-        """Draw footer at the exact bottom of every page"""
+        """Draw footer at the bottom - positioned for proper A4 printing"""
         canvas.saveState()
         
         # Footer content
         current_date = datetime.now().strftime("%B %d, %Y at %I:%M %p")
         
-        # Position footer at exact bottom of page - moved down for perfect end positioning
+        # Position footer within printable area for A4 paper
         page_width = A4[0]
-        footer_y = 15  # 15 points from bottom (exact end of invoice page)
+        footer_y = 40  # 40 points from bottom - safe printable area for A4 printers
         
-        # Draw footer lines centered with tighter spacing for compact layout at page end
+        # Draw footer lines centered with compact spacing
         canvas.setFont('Helvetica-Bold', 9)
         canvas.drawCentredString(page_width / 2, footer_y + 33, "Thank you for choosing BS Engineering!")
         

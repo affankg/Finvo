@@ -419,7 +419,15 @@ def generate_pdf(doc_type, instance):
     
     for item in instance.items.all():
         # Enhanced description with proper text wrapping and formatting
-        description_text = f"<b>{item.service.name}</b>"
+        # Handle both predefined services and manual entry
+        if item.service:
+            service_name = item.service.name
+        elif hasattr(item, 'service_name') and item.service_name:
+            service_name = item.service_name
+        else:
+            service_name = "Service"  # Fallback
+        
+        description_text = f"<b>{service_name}</b>"
         if item.description:
             # Handle multi-line descriptions properly
             description_lines = item.description.split('\n')

@@ -180,7 +180,7 @@ def generate_pdf(doc_type, instance):
         rightMargin=35,
         leftMargin=0.6*inch,  # 0.6 inch from left for logo positioning
         topMargin=0.5*inch,   # 0.5 inch from top for logo positioning
-        bottomMargin=100,     # Increased to 100 points for printable footer area
+        bottomMargin=110,     # Increased to 110 points to accommodate full footer height
         showBoundary=0
     )
     
@@ -205,18 +205,18 @@ def generate_pdf(doc_type, instance):
         # Footer content
         current_date = datetime.now().strftime("%B %d, %Y at %I:%M %p")
         
-        # Position footer within printable area for A4 paper
+        # Position footer within printable area for A4 paper - all lines properly visible
         page_width = A4[0]
-        footer_y = 40  # 40 points from bottom - safe printable area for A4 printers
+        footer_y = 60  # 60 points from bottom - ensures all footer lines print properly
         
-        # Draw footer lines centered with compact spacing
+        # Draw footer lines centered with proper spacing for visibility
         canvas.setFont('Helvetica-Bold', 9)
-        canvas.drawCentredString(page_width / 2, footer_y + 33, "Thank you for choosing BS Engineering!")
+        canvas.drawCentredString(page_width / 2, footer_y + 30, "Thank you for choosing BS Engineering!")
         
         canvas.setFont('Helvetica', 8)
-        canvas.drawCentredString(page_width / 2, footer_y + 22, f"Generated: {current_date}")
+        canvas.drawCentredString(page_width / 2, footer_y + 20, f"Generated: {current_date}")
         
-        canvas.drawCentredString(page_width / 2, footer_y + 11, 
+        canvas.drawCentredString(page_width / 2, footer_y + 10, 
                                 "Questions? Contact us: bs@bsconsults.com | P: 92.21.34982786 | C: +92.3063216344 | C: +92.3443311303")
         
         canvas.setFont('Helvetica-Oblique', 8)

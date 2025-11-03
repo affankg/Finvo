@@ -8,7 +8,9 @@ import BulkDeleteConfirmation from '../components/BulkDeleteConfirmation';
 import { useQuotationToProject } from '../hooks/useQuotationToProject';
 
 interface QuotationItem {
-  service_id: number;
+  service?: number | null;  // Made optional
+  service_id?: number;  // Keep for backward compatibility
+  service_name?: string;  // For manual entry
   quantity: number;
   price: number;
   description: string;
@@ -178,13 +180,31 @@ const Quotations = () => {
         notes: formData.notes,
         currency: formData.currency,
         purchase_requisition: formData.purchase_requisition,
-        items: formData.items.map(item => ({
-          service: item.service_id,
-          quantity: item.quantity,
-          price: item.price.toString(), // Convert to string for API
-          description: item.description,
-          tax_type: item.tax_type,
-        })),
+        items: formData.items.map(item => {
+          // Validate that either service or service_name is provided
+          if (!item.service && !item.service_name) {
+            throw new Error('Either select a service from the list or enter a service name manually');
+          }
+          
+          const itemData: any = {
+            quantity: item.quantity,
+            price: item.price.toString(), // Convert to string for API
+            description: item.description,
+            tax_type: item.tax_type,
+          };
+          
+          // Include service ID if selected from dropdown
+          if (item.service) {
+            itemData.service = parseInt(item.service.toString());
+          }
+          
+          // Include manual service name if entered
+          if (item.service_name) {
+            itemData.service_name = item.service_name;
+          }
+          
+          return itemData;
+        }),
       };
 
       if (editingQuotation) {
@@ -219,7 +239,7 @@ const Quotations = () => {
   const addItem = () => {
     setFormData({
       ...formData,
-      items: [...formData.items, { service_id: 0, quantity: 1, price: 0, description: '', tax_type: 'none' }],
+      items: [...formData.items, { service: null, service_name: '', quantity: 1, price: 0, description: '', tax_type: 'none' }],
     });
   };
 
@@ -234,12 +254,19 @@ const Quotations = () => {
     const updatedItems = [...formData.items];
     updatedItems[index] = { ...updatedItems[index], [field]: value };
     
-    // Auto-populate price when service is selected
-    if (field === 'service_id') {
+    // Auto-populate price and clear manual entry when service is selected
+    if (field === 'service' && value) {
       const service = services.find(s => s.id === parseInt(value));
       if (service) {
-        updatedItems[index].price = parseFloat(service.price); // Convert string to number for form
+        updatedItems[index].price = parseFloat(service.price);
+        updatedItems[index].service_name = ''; // Clear manual entry
+        updatedItems[index].description = service.description || '';
       }
+    }
+    
+    // Clear service selection when manual name is entered
+    if (field === 'service_name' && value) {
+      updatedItems[index].service = null;
     }
     
     setFormData({ ...formData, items: updatedItems });
@@ -256,7 +283,8 @@ const Quotations = () => {
       currency: quotation.currency || 'PKR',
       purchase_requisition: quotation.purchase_requisition || '',
       items: quotation.items?.map(item => ({
-        service_id: item.service, // service is already a number (ID)
+        service: item.service || null, // service is already a number (ID) or null
+        service_name: (item as any).service_name || '',
         quantity: item.quantity,
         price: parseFloat(item.price.toString()),
         description: item.description,
@@ -1041,48 +1069,77 @@ const Quotations = () => {
                 </div>
                 
                 {formData.items.map((item, index) => (
-                  <div key={index} className="border border-gray-300 dark:border-gray-600 rounded p-4 mb-3">
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-3">
+                  <div key={index} className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 mb-3 bg-gray-50 dark:bg-gray-700/30">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                      {/* Service Selection */}
                       <div>
-                        <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Service</label>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Select Service (Optional)
+                        </label>
                         <select
-                          value={item.service_id}
-                          onChange={(e) => updateItem(index, 'service_id', parseInt(e.target.value))}
-                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                          value={item.service || ''}
+                          onChange={(e) => updateItem(index, 'service', e.target.value ? parseInt(e.target.value) : null)}
+                          className="w-full px-3 py-2 text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
+                          disabled={!!item.service_name}
                         >
-                          <option value={0}>Select service</option>
+                          <option value="">-- Choose from list --</option>
                           {services.map((service) => (
                             <option key={service.id} value={service.id}>
-                              {service.name}
+                              {service.name} (Rs {parseFloat(service.price).toFixed(2)})
                             </option>
                           ))}
                         </select>
                       </div>
+                      
+                      {/* Manual Service Name Entry */}
                       <div>
-                        <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Quantity</label>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Or Enter Service Name Manually
+                        </label>
+                        <input
+                          type="text"
+                          value={item.service_name || ''}
+                          onChange={(e) => updateItem(index, 'service_name', e.target.value)}
+                          className="w-full px-3 py-2 text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
+                          placeholder="Enter custom service name"
+                          disabled={!!item.service}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Quantity <span className="text-red-500">*</span>
+                        </label>
                         <input
                           type="number"
+                          min="1"
                           value={item.quantity}
                           onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
-                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                          className="w-full px-3 py-2 text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Price</label>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Price <span className="text-red-500">*</span>
+                        </label>
                         <input
                           type="number"
                           step="0.01"
+                          min="0"
                           value={item.price === 0 ? '' : item.price}
                           onChange={(e) => updateItem(index, 'price', e.target.value === '' ? 0 : parseFloat(e.target.value))}
-                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                          className="w-full px-3 py-2 text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
+                          placeholder="0.00"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Tax</label>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Tax</label>
                         <select
                           value={item.tax_type}
                           onChange={(e) => updateItem(index, 'tax_type', e.target.value)}
-                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                          className="w-full px-3 py-2 text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
                         >
                           <option value="none">No Tax</option>
                           <option value="gst_18">GST 18%</option>
@@ -1094,20 +1151,21 @@ const Quotations = () => {
                         <button
                           type="button"
                           onClick={() => removeItem(index)}
-                          className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-sm"
+                          className="w-full bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
                         >
                           Remove
                         </button>
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Description</label>
+                    
+                    <div className="mb-3">
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
                       <input
                         type="text"
                         value={item.description}
                         onChange={(e) => updateItem(index, 'description', e.target.value)}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                        placeholder="Item description"
+                        className="w-full px-3 py-2 text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
+                        placeholder="Item description (optional)"
                       />
                     </div>
                     <div className="text-right mt-2">

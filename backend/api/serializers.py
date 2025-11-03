@@ -182,9 +182,17 @@ class QuotationItemSerializer(serializers.ModelSerializer):
     tax_rate = serializers.DecimalField(max_digits=5, decimal_places=4, read_only=True)
     service_details = ServiceSerializer(source='service', read_only=True)
 
+    def validate(self, data):
+        """Ensure either service or service_name is provided"""
+        if not data.get('service') and not data.get('service_name'):
+            raise serializers.ValidationError({
+                'service': 'Either select a service or enter a service name manually.'
+            })
+        return data
+
     class Meta:
         model = QuotationItem
-        fields = ['id', 'service', 'service_details', 'quantity', 'price', 'description', 'tax_type', 'tax_rate', 'subtotal', 'tax_amount', 'total']
+        fields = ['id', 'service', 'service_name', 'service_details', 'quantity', 'price', 'description', 'tax_type', 'tax_rate', 'subtotal', 'tax_amount', 'total']
         read_only_fields = ['id', 'subtotal', 'tax_amount', 'total', 'tax_rate']
 
 class QuotationSerializer(serializers.ModelSerializer):
@@ -261,8 +269,16 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = InvoiceItem
-        fields = ['id', 'service', 'service_details', 'quantity', 'price', 'description', 'tax_type', 'tax_rate', 'subtotal', 'tax_amount', 'total']
+        fields = ['id', 'service', 'service_name', 'service_details', 'quantity', 'price', 'description', 'tax_type', 'tax_rate', 'subtotal', 'tax_amount', 'total']
         read_only_fields = ['id', 'subtotal', 'tax_amount', 'total', 'tax_rate']
+    
+    def validate(self, data):
+        """Ensure either service or service_name is provided"""
+        if not data.get('service') and not data.get('service_name'):
+            raise serializers.ValidationError({
+                'service': 'Either select a service or enter a service name manually.'
+            })
+        return data
 
 class InvoiceSerializer(serializers.ModelSerializer):
     items = InvoiceItemSerializer(many=True)

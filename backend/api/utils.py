@@ -252,10 +252,10 @@ def generate_pdf(doc_type, instance):
     for logo_path in logo_paths:
         if os.path.exists(logo_path):
             try:
-                # Logo size: 5.6 inches wide × 2.2 inches high (prominent, highly visible)
+                # Logo size: 6.3 inches wide × 2.5 inches high (larger, more prominent)
                 # Proportional scaling maintains aspect ratio without distortion
-                # Twice the previous size for maximum prominence in PDF header
-                logo = Image(logo_path, width=5.6*inch, height=2.2*inch, kind='proportional')
+                # Increased size for better visibility and professional appearance
+                logo = Image(logo_path, width=6.3*inch, height=2.5*inch, kind='proportional')
                 logo_element = logo
                 logo_loaded = True
                 break
@@ -264,7 +264,7 @@ def generate_pdf(doc_type, instance):
                 continue
     
     if not logo_loaded:
-        logo_element = Spacer(5.6*inch, 2.2*inch)  # Match logo size if not loaded
+        logo_element = Spacer(6.3*inch, 2.5*inch)  # Match logo size if not loaded
     
     # Document info - right side, properly aligned with vertical centering
     document_info_style = ParagraphStyle(

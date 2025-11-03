@@ -252,9 +252,9 @@ def generate_pdf(doc_type, instance):
     for logo_path in logo_paths:
         if os.path.exists(logo_path):
             try:
-                # Logo size: 1.8 inches wide x 0.9 inches high (129.6 x 64.8 points)
+                # Logo size: 150px × 50px (proportional, maintaining aspect ratio)
                 # Position: 0.5 inch from top, 0.6 inch from left
-                logo = Image(logo_path, width=1.8*inch, height=0.9*inch, kind='proportional')
+                logo = Image(logo_path, width=150, height=50, kind='proportional')
                 logo_element = logo
                 logo_loaded = True
                 break
@@ -263,7 +263,7 @@ def generate_pdf(doc_type, instance):
                 continue
     
     if not logo_loaded:
-        logo_element = Spacer(1.8*inch, 0.9*inch)  # Match logo size if not loaded
+        logo_element = Spacer(150, 50)  # Match logo size if not loaded
     
     # Document info - right side, properly aligned with vertical centering
     document_info_style = ParagraphStyle(
@@ -615,13 +615,13 @@ def generate_pdf(doc_type, instance):
     if total_tax_amount > 0:
         calculation_data.append([
             Paragraph(f"<b>Total Tax: {format_clean_currency(total_tax_amount)}</b>", 
-                     ParagraphStyle('TaxRow', parent=styles['Normal'], fontSize=10, alignment=TA_RIGHT, fontName='Helvetica-Bold', textColor=colors.HexColor('#e74c3c'), wordWrap='LTR'))
+                     ParagraphStyle('TaxRow', parent=styles['Normal'], fontSize=10, alignment=TA_RIGHT, fontName='Helvetica-Bold', textColor=colors.HexColor('#000000'), wordWrap='LTR'))
         ])
     
     # Final total row - using single cell approach for no wrapping  
     calculation_data.append([
         Paragraph(f"<b>TOTAL AMOUNT: {format_clean_currency(total_amount)}</b>", 
-                 ParagraphStyle('TotalRow', parent=styles['Normal'], fontSize=11, alignment=TA_RIGHT, fontName='Helvetica-Bold', textColor=colors.HexColor('#2c3e50'), wordWrap='LTR'))
+                 ParagraphStyle('TotalRow', parent=styles['Normal'], fontSize=11, alignment=TA_RIGHT, fontName='Helvetica-Bold', textColor=colors.HexColor('#000000'), wordWrap='LTR'))
     ])
     
     # Create calculation table with full width to prevent wrapping

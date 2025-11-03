@@ -252,9 +252,10 @@ def generate_pdf(doc_type, instance):
     for logo_path in logo_paths:
         if os.path.exists(logo_path):
             try:
-                # Logo size: 150px × 50px (proportional, maintaining aspect ratio)
+                # Logo size: 2.8 inches wide × 1.1 inches high (professional, clearly visible)
+                # Proportional scaling maintains aspect ratio without distortion
                 # Position: 0.5 inch from top, 0.6 inch from left
-                logo = Image(logo_path, width=150, height=50, kind='proportional')
+                logo = Image(logo_path, width=2.8*inch, height=1.1*inch, kind='proportional')
                 logo_element = logo
                 logo_loaded = True
                 break
@@ -263,7 +264,7 @@ def generate_pdf(doc_type, instance):
                 continue
     
     if not logo_loaded:
-        logo_element = Spacer(150, 50)  # Match logo size if not loaded
+        logo_element = Spacer(2.8*inch, 1.1*inch)  # Match logo size if not loaded
     
     # Document info - right side, properly aligned with vertical centering
     document_info_style = ParagraphStyle(

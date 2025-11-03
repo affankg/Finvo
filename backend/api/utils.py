@@ -494,7 +494,7 @@ def generate_pdf(doc_type, instance):
                 'ItemPrice',
                 parent=styles['Normal'],
                 fontSize=9,
-                alignment=TA_RIGHT,
+                alignment=TA_CENTER,  # Center-aligned to match header
                 spaceBefore=4,  # Uniform padding
                 spaceAfter=4,   # Uniform padding
                 leading=12,
@@ -630,8 +630,10 @@ def generate_pdf(doc_type, instance):
     calculation_table.setStyle(TableStyle([
         ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 8),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -2), 3),  # Reduced spacing for subtotal and tax rows (neat and clean)
+        ('BOTTOMPADDING', (0, 0), (-1, -2), 3),  # Reduced spacing for subtotal and tax rows
+        ('TOPPADDING', (0, -1), (-1, -1), 8),  # Normal spacing for final total
+        ('BOTTOMPADDING', (0, -1), (-1, -1), 8),  # Normal spacing for final total
         ('LEFTPADDING', (0, 0), (-1, -1), 8),
         ('RIGHTPADDING', (0, 0), (-1, -1), 8),
         # Special styling for final total row

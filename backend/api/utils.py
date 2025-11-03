@@ -180,7 +180,7 @@ def generate_pdf(doc_type, instance):
         rightMargin=35,
         leftMargin=0.6*inch,  # 0.6 inch from left for logo positioning
         topMargin=0.5*inch,   # 0.5 inch from top for logo positioning
-        bottomMargin=110,     # Increased to 110 points to accommodate full footer height
+        bottomMargin=125,     # Increased to 125 points to ensure last line prints properly
         showBoundary=0
     )
     
@@ -205,9 +205,9 @@ def generate_pdf(doc_type, instance):
         # Footer content
         current_date = datetime.now().strftime("%B %d, %Y at %I:%M %p")
         
-        # Position footer within printable area for A4 paper - all lines properly visible
+        # Position footer well within printable area for A4 paper - all lines properly visible
         page_width = A4[0]
-        footer_y = 60  # 60 points from bottom - ensures all footer lines print properly
+        footer_y = 75  # 75 points from bottom - ensures all footer lines including last line print properly
         
         # Draw footer lines centered with proper spacing for visibility
         canvas.setFont('Helvetica-Bold', 9)

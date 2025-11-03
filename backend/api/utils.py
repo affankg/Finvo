@@ -305,7 +305,7 @@ def generate_pdf(doc_type, instance):
     header_table = Table(header_table_data, colWidths=[4.2*inch, 2.1*inch])
     header_table.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),  # MIDDLE alignment makes logo parallel with INVOICE# text
-        ('LEFTPADDING', (0, 0), (0, 0), 20),
+        ('LEFTPADDING', (0, 0), (0, 0), 0),  # Align with client address and sections below
         ('RIGHTPADDING', (0, 0), (-1, -1), 0),
         ('TOPPADDING', (0, 0), (-1, -1), 10),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 10),

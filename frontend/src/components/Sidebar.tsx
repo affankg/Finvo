@@ -172,23 +172,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   }, [deviceType, isHovered]);
 
   // Handle hover behavior - smooth expansion on desktop
-  const handleMouseEnter = React.useCallback(() => {
-    if (deviceType === 'desktop' && window.innerWidth >= 1024) {
-      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-      if (!isTouchDevice) {
-        setIsHovered(true);
-      }
+  const handleMouseEnter = () => {
+    // Only expand on hover for desktop
+    if (window.innerWidth >= 1024) {
+      console.log('Sidebar hover: expanding');
+      setIsHovered(true);
     }
-  }, [deviceType]);
+  };
 
-  const handleMouseLeave = React.useCallback(() => {
-    if (deviceType === 'desktop' && window.innerWidth >= 1024) {
-      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-      if (!isTouchDevice) {
-        setIsHovered(false);
-      }
+  const handleMouseLeave = () => {
+    // Only collapse on hover out for desktop
+    if (window.innerWidth >= 1024) {
+      console.log('Sidebar hover: collapsing');
+      setIsHovered(false);
     }
-  }, [deviceType]);
+  };
+
+  // Debug log to check state changes
+  React.useEffect(() => {
+    console.log('Sidebar state:', { deviceType, isHovered, shouldShowExpanded });
+  }, [deviceType, isHovered, shouldShowExpanded]);
 
   return (
     <>

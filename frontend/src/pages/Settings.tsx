@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { toast } from 'react-hot-toast';
 import { financialAPI } from '../services/api';
 import { formatSmartCurrency, DEFAULT_CURRENCY } from '../utils/currency';
-import DocumentNumberSettings from '../components/settings/DocumentNumberSettings.simple';
+
+// Lazy load the DocumentNumberSettings component to avoid build issues
+const DocumentNumberSettings = lazy(() => import('../components/settings/DocumentNumberSettings'));
 
 interface ActivityLog {
   id: number;
@@ -183,7 +185,13 @@ const Settings: React.FC = () => {
       {/* Document Number Format Settings */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
         <div className="p-6">
-          <DocumentNumberSettings />
+          <Suspense fallback={
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          }>
+            <DocumentNumberSettings />
+          </Suspense>
         </div>
       </div>
 

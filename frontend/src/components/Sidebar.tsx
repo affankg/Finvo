@@ -201,16 +201,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         />
       )}
 
-      {/* Sidebar - Fixed on desktop for overlay expansion, normal on mobile */}
+      {/* Sidebar - Fixed on desktop for overlay expansion, drawer on mobile */}
       <div
         className={`
           fixed inset-y-0 left-0 z-30 
           bg-white dark:bg-gray-800 shadow-xl 
-          transform transition-all duration-300 ease-in-out
+          transition-all duration-300 ease-in-out
           border-r border-gray-200 dark:border-gray-700
-          ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          ${shouldShowExpanded ? 'w-64' : 'w-20'}
           sidebar-hover-container
+          ${deviceType === 'mobile' || deviceType === 'tablet' 
+            ? `transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-64`
+            : `${shouldShowExpanded ? 'w-64' : 'w-20'}`
+          }
         `}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}

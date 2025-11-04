@@ -413,32 +413,37 @@ const Invoices = () => {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Invoices</h1>
-        {canEdit && (
-          <div className="flex space-x-3">
-            <button
-              onClick={openModal}
-              className="relative group overflow-hidden bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white px-6 py-3 rounded-xl flex items-center space-x-3 transition-all duration-300 ease-out hover:scale-105 hover:shadow-lg hover:-translate-y-1 font-semibold"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <span className="text-lg group-hover:scale-110 transition-transform duration-300">+</span>
-              <span className="relative z-10 group-hover:text-indigo-100 transition-colors duration-300">Create Invoice</span>
-              <div className="absolute top-1 right-1 w-2 h-2 bg-indigo-300 rounded-full opacity-50 group-hover:opacity-80 animate-pulse"></div>
-            </button>
-            <button
-              onClick={() => setIsQuotationModalOpen(true)}
-              className="relative group overflow-hidden bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-xl flex items-center space-x-3 transition-all duration-300 ease-out hover:scale-105 hover:shadow-lg hover:-translate-y-1 font-semibold"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <span className="text-lg group-hover:scale-110 transition-transform duration-300">📄</span>
-              <span className="relative z-10 group-hover:text-green-100 transition-colors duration-300">From Quotation</span>
-              <div className="absolute top-1 right-1 w-2 h-2 bg-green-300 rounded-full opacity-50 group-hover:opacity-80 animate-pulse"></div>
-            </button>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
+              Invoices
+            </h1>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Manage your invoices and track payments
+            </p>
           </div>
-        )}
-      </div>
+          {canEdit && (
+            <div className="flex space-x-3">
+              <button
+                onClick={openModal}
+                className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+              >
+                <span className="text-lg mr-2">+</span>
+                Create Invoice
+              </button>
+              <button
+                onClick={() => setIsQuotationModalOpen(true)}
+                className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+              >
+                <span className="text-lg mr-2">📄</span>
+                From Quotation
+              </button>
+            </div>
+          )}
+        </div>
 
       {/* Quick Statistics */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
@@ -1344,6 +1349,7 @@ const Invoices = () => {
           }
         `
       }} />
+      </div>
     </div>
   );
 };

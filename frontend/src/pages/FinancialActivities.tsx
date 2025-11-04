@@ -1267,15 +1267,15 @@ const FinancialActivities: React.FC = () => {
   );
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header Section */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent dark:text-white">
+            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
               Financial Activities
             </h1>
-            <p className="text-slate-600 dark:text-gray-400 mt-1 font-medium">
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
               Manage and track all financial transactions and activities
             </p>
           </div>
@@ -1348,6 +1348,7 @@ const FinancialActivities: React.FC = () => {
         projects={projects}
         accounts={accounts}
       />
+      </div>
     </div>
   );
 };

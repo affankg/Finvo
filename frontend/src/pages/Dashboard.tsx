@@ -229,10 +229,10 @@ const Dashboard: React.FC = () => {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
               Welcome back, {user?.first_name || user?.username}!
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
               Here's what's happening with your business today.
             </p>
           </div>

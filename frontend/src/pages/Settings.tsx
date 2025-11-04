@@ -37,13 +37,16 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Manage your account settings and view system activity
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <div className="pb-4">
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
+            Settings
+          </h1>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Manage your account settings and view system activity
+          </p>
+        </div>
 
       {/* Recent Activities Section */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
@@ -194,6 +197,7 @@ const Settings: React.FC = () => {
             </p>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

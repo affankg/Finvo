@@ -1327,7 +1327,7 @@ const FinancialActivities: React.FC = () => {
             </button>
           ))}
         </div>
-      </div>
+
       {/* Content */}
       <div>
         {activeTab === 'activities' && renderActivitiesTab()}

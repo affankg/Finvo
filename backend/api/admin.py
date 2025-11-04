@@ -4,6 +4,7 @@ from .models import (
     User, Client, Service, Quotation, QuotationItem, Invoice, InvoiceItem, 
     ActivityLog, NumberSequence, Interaction, ClientAttachment
 )
+from .document_number_models import DocumentNumberSettings, DocumentNumberHistory
 
 @admin.register(NumberSequence)
 class NumberSequenceAdmin(admin.ModelAdmin):
@@ -181,6 +182,44 @@ class ClientAttachmentAdmin(admin.ModelAdmin):
     list_filter = ('file_type', 'created_at', 'uploaded_by')
     search_fields = ('name', 'description', 'client__name')
     readonly_fields = ('file_type', 'file_size', 'created_at')
+
+@admin.register(DocumentNumberSettings)
+class DocumentNumberSettingsAdmin(admin.ModelAdmin):
+    list_display = ('type', 'prefix', 'current_number', 'padding_length', 'include_year', 'include_month', 'reset_rule', 'enabled', 'updated_at')
+    list_filter = ('type', 'reset_rule', 'enabled', 'include_year', 'include_month')
+    search_fields = ('type', 'prefix')
+    readonly_fields = ('created_at', 'updated_at')
+    ordering = ('type',)
+    
+    fieldsets = (
+        ('Basic Configuration', {
+            'fields': ('type', 'prefix', 'enabled')
+        }),
+        ('Number Format', {
+            'fields': ('current_number', 'padding_length', 'include_year', 'include_month')
+        }),
+        ('Reset Configuration', {
+            'fields': ('reset_rule', 'last_reset_date')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+
+@admin.register(DocumentNumberHistory)
+class DocumentNumberHistoryAdmin(admin.ModelAdmin):
+    list_display = ('generated_number', 'type', 'document_id', 'sequence_number', 'date_token', 'assigned_at')
+    list_filter = ('type', 'assigned_at')
+    search_fields = ('generated_number', 'document_id')
+    readonly_fields = ('type', 'document_id', 'generated_number', 'sequence_number', 'date_token', 'assigned_at')
+    ordering = ('-assigned_at',)
+    
+    def has_add_permission(self, request):
+        return False  # Prevent manual creation
+    
+    def has_change_permission(self, request, obj=None):
+        return False  # Prevent editing
 
 # Customize admin site
 admin.site.site_header = 'BS Engineering Administration'

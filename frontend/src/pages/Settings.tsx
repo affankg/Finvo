@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { financialAPI } from '../services/api';
 import { formatSmartCurrency, DEFAULT_CURRENCY } from '../utils/currency';
+import DocumentNumberSettings from '../components/settings/DocumentNumberSettings';
 
 interface ActivityLog {
   id: number;
@@ -176,6 +177,13 @@ const Settings: React.FC = () => {
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Document Number Format Settings */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="p-6">
+          <DocumentNumberSettings />
         </div>
       </div>
 

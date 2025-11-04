@@ -18,6 +18,9 @@ from .project_views import (
     ProjectMilestoneViewSet, ProjectNoteViewSet, ProjectAnalyticsViewSet,
     ProjectExpenseCategoryViewSet, ProjectExpenseViewSet
 )
+from .document_number_views import (
+    DocumentNumberSettingsViewSet, preview_next_by_type, test_format
+)
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
@@ -46,6 +49,9 @@ router.register(r'project-analytics', ProjectAnalyticsViewSet, basename='project
 router.register(r'project-expense-categories', ProjectExpenseCategoryViewSet, basename='project-expense-categories')
 router.register(r'project-expenses', ProjectExpenseViewSet)
 
+# Document Number Settings endpoints
+router.register(r'document-settings', DocumentNumberSettingsViewSet, basename='document-settings')
+
 urlpatterns = [
     path('', include(router.urls)),
     path('auth/login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -65,4 +71,8 @@ urlpatterns = [
     # New Chart Data endpoints
     path('financial-charts/', financial_charts_data, name='financial_charts_data'),
     path('financial-summary/', financial_summary, name='financial_summary'),
+    
+    # Document Number Settings endpoints
+    path('document-settings/<str:doc_type>/preview/', preview_next_by_type, name='preview_next_by_type'),
+    path('document-settings/test-format/', test_format, name='test_format'),
 ]

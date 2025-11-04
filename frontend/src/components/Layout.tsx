@@ -56,8 +56,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Sidebar */}
         <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
 
-        {/* Main content area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Main content area - fixed margin-left on desktop to account for collapsed sidebar */}
+        <div className="flex-1 flex flex-col overflow-hidden lg:ml-20 content-no-shift">
           {/* Desktop header */}
           <div className="hidden lg:block bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3">
             <div className="flex items-center justify-between">

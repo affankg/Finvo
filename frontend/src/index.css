@@ -274,3 +274,108 @@ input:focus, select:focus, textarea:focus {
 .dark input:focus, .dark select:focus, .dark textarea:focus {
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
+
+/* ============================================
+   SMOOTH HOVER-BASED SIDEBAR EXPANSION
+   ============================================ */
+
+/* Sidebar smooth width transitions */
+.sidebar-hover-container {
+  transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: width;
+}
+
+/* Content area smooth adjustment */
+.content-area-responsive {
+  transition: margin-left 300ms cubic-bezier(0.4, 0, 0.2, 1),
+              width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: margin-left, width;
+}
+
+/* Sidebar collapsed state (default on desktop) */
+@media (min-width: 1024px) {
+  .sidebar-collapsed {
+    width: 5rem; /* 80px - collapsed width */
+  }
+  
+  .sidebar-expanded {
+    width: 16rem; /* 256px - expanded width */
+  }
+}
+
+/* Prevent text selection during hover transitions */
+.sidebar-hover-container:hover {
+  user-select: none;
+}
+
+/* Smooth icon rotations */
+.sidebar-icon-rotate {
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Text fade-in/out on hover */
+.sidebar-text-fade {
+  transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Tooltip smooth appearance */
+.sidebar-tooltip {
+  transition: opacity 200ms ease-in-out,
+              transform 200ms ease-in-out;
+}
+
+/* Remove any layout shift during expansion */
+.no-layout-shift {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Smooth background color transitions for menu items */
+.sidebar-menu-item {
+  transition: background-color 200ms ease,
+              transform 200ms ease,
+              box-shadow 200ms ease;
+}
+
+.sidebar-menu-item:hover {
+  transform: translateX(4px);
+}
+
+/* GPU acceleration for better performance */
+.gpu-accelerated {
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+/* Prevent content overflow during transitions */
+.prevent-overflow {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Desktop-only hover behavior */
+@media (min-width: 1024px) {
+  /* Ensure sidebar doesn't push content, uses overlay approach on expand */
+  .sidebar-hover-overlay {
+    position: fixed;
+    z-index: 30;
+  }
+  
+  /* Content doesn't shift, sidebar expands over content */
+  .content-no-shift {
+    margin-left: 5rem; /* Always account for collapsed sidebar width */
+    width: calc(100% - 5rem);
+    transition: none; /* No transition needed since content doesn't move */
+  }
+}
+
+/* Mobile/Tablet: Full overlay behavior (existing) */
+@media (max-width: 1023px) {
+  .sidebar-mobile {
+    position: fixed;
+    z-index: 40;
+  }
+}

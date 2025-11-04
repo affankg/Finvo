@@ -112,27 +112,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const { user } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const location = useLocation();
-  const [isCollapsed, setIsCollapsed] = React.useState(false); // Start expanded by default
   const [isHovered, setIsHovered] = React.useState(false);
-  const [deviceType, setDeviceType] = React.useState<'mobile' | 'tablet' | 'desktop'>('desktop'); // Default to desktop
+  const [deviceType, setDeviceType] = React.useState<'mobile' | 'tablet' | 'desktop'>('desktop');
 
-  // Advanced device detection with proper responsive behavior
+  // Device detection for responsive behavior
   React.useEffect(() => {
     const detectDevice = () => {
       const width = window.innerWidth;
       
       if (width < 768) {
         setDeviceType('mobile');
-        setIsCollapsed(true); // Always collapsed on mobile
       } else if (width < 1024) {
         setDeviceType('tablet');
-        setIsCollapsed(false); // Expanded by default on tablet
       } else {
         setDeviceType('desktop');
-        // On desktop, keep current state or default to expanded
-        if (isCollapsed === true && width >= 1024) {
-          setIsCollapsed(false); // Default to expanded on desktop
-        }
       }
     };
     
@@ -169,18 +162,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     return location.pathname.startsWith(href);
   };
 
-  // Determine if sidebar should show expanded content based on device type
+  // Determine if sidebar should show expanded content - hover-based for desktop
   const shouldShowExpanded = React.useMemo(() => {
-    if (deviceType === 'mobile') {
-      return true; // Mobile always shows full width when open
-    } else if (deviceType === 'tablet') {
-      return !isCollapsed; // Tablet respects collapsed state only
+    if (deviceType === 'mobile' || deviceType === 'tablet') {
+      return true; // Mobile/tablet always shows full width when open
     } else {
-      return !isCollapsed || isHovered; // Desktop supports hover + pin
+      return isHovered; // Desktop expands only on hover
     }
-  }, [deviceType, isCollapsed, isHovered]);
+  }, [deviceType, isHovered]);
 
-  // Handle hover behavior based on device type
+  // Handle hover behavior - smooth expansion on desktop
   const handleMouseEnter = React.useCallback(() => {
     if (deviceType === 'desktop' && window.innerWidth >= 1024) {
       const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -210,11 +201,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Fixed on desktop for overlay expansion, normal on mobile */}
       <div
-        className={`fixed inset-y-0 left-0 z-30 bg-white dark:bg-gray-800 shadow-xl transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        } ${shouldShowExpanded ? 'w-64' : 'w-20'} lg:block border-r border-gray-200 dark:border-gray-700`}
+        className={`
+          fixed inset-y-0 left-0 z-30 
+          bg-white dark:bg-gray-800 shadow-xl 
+          transform transition-all duration-300 ease-in-out
+          border-r border-gray-200 dark:border-gray-700
+          ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          ${shouldShowExpanded ? 'w-64' : 'w-20'}
+          sidebar-hover-container
+        `}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         role="navigation"
@@ -299,29 +296,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                                     animate-pulse shadow-xl shadow-blue-500/40"></div>
                   </div>
                 </Link>
-                
-                {/* Desktop toggle button with glass morphism */}
-                {deviceType !== 'mobile' && (
-                  <button
-                    onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 rounded-xl 
-                               bg-gradient-to-br from-white/30 via-white/15 to-white/10 
-                               dark:from-gray-800/40 dark:via-gray-900/25 dark:to-gray-800/15 
-                               backdrop-blur-sm border border-white/30 dark:border-gray-700/40 
-                               shadow-lg hover:shadow-xl
-                               hover:bg-gradient-to-br hover:from-white/50 hover:via-white/30 hover:to-white/20
-                               dark:hover:from-gray-800/60 dark:hover:via-gray-900/40 dark:hover:to-gray-800/30
-                               hover:border-white/50 dark:hover:border-gray-600/60
-                               transition-all duration-500 ease-out hover:scale-110 z-50"
-                  >
-                    <svg className="w-4 h-4 text-gray-600 dark:text-gray-300 transition-colors duration-300 
-                                    hover:text-indigo-600 dark:hover:text-indigo-400" 
-                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                            d={isCollapsed ? "M9 5l7 7-7 7" : "M15 19l-7-7 7-7"} />
-                    </svg>
-                  </button>
-                )}
                 
                 {/* Mobile close button with glass morphism */}
                 <button
